@@ -442,7 +442,7 @@ fn run() -> i32 {
     }
 
     // ---- resolve selected plugins ----------------------------------------
-    let selected: Vec<Plugin> = match opts.selected {
+    let mut selected: Vec<Plugin> = match opts.selected {
         Selected::All => plugins.clone(),
         Selected::Names => plugins
             .iter()
@@ -455,6 +455,7 @@ fn run() -> i32 {
             .cloned()
             .collect(),
     };
+    fmt::mark_ascii_duplicates(&mut selected);
 
     // ---- auto cross product ----------------------------------------------
     //
@@ -514,9 +515,12 @@ fn run() -> i32 {
         .and_then(|v| v.parse::<usize>().ok())
         .filter(|&n| n > 0)
         .unwrap_or_else(|| {
-            std::thread::available_parallelism()
+            let available = std::thread::available_parallelism()
                 .map(|n| n.get())
-                .unwrap_or(1)
+                .unwrap_or(1);
+            // A short job cannot amortize one thread per CPU. The explicit
+            // environment override still permits any requested worker count.
+            available.min(est.div_ceil(100_000).max(2) as usize)
         });
     // Tunable so the profiling/benchmark harness can force a serial run.
     let min_parallel: u64 = std::env::var("USERNAME_ANARCHY_MIN_PARALLEL")
@@ -607,7 +611,7 @@ fn apply_opt(
         }
         Opt::ListFormats => {
             opts.substitute = true;
-            list_plugins(plugins);
+            list_plugins(plugins, opts.verbose);
             return true;
         }
         Opt::SelectFormat => {
@@ -655,7 +659,7 @@ fn apply_opt(
             if value.is_empty() {
                 fail("invalid argument: --suffix (OptionParser::InvalidArgument)");
             }
-            opts.suffix = Some(value.to_lowercase().into_bytes())
+            opts.suffix = Some(util::downcase(value.as_bytes()))
         }
         Opt::CaseInsensitive => {
             if value.is_empty() {
@@ -973,10 +977,13 @@ fn run_parallel<'a>(
 // --list-formats
 // ---------------------------------------------------------------------------
 
-fn list_plugins(plugins: &[Plugin]) {
+fn list_plugins(plugins: &[Plugin], verbose: bool) {
     println!("{}\tExample", pad("Plugin name", 20));
     println!("{}", "-".repeat(80));
     let name = Name::init(&person_of("anna", Some("boom"), Some("key")));
+    if verbose {
+        println!("{}", String::from_utf8_lossy(&engine::pp_line(&name)));
+    }
     let ctx = Ctx::new(String::new(), String::new());
     let mut sc = Scratch::new();
     for p in plugins {
@@ -1159,6 +1166,43 @@ mod pipeline_tests {
             verbose: true,
             case_insensitive: false,
             suffix: Some(b"@example.com".to_vec()),
+        }
+    }
+
+    #[test]
+    fn ascii_templates_match_general_engine_including_fallbacks() {
+        let long = "x".repeat(2000);
+        let people = [
+            person_of("anna", Some("boom"), Some("key")),
+            person_of("a", Some("b"), Some("k")),
+            person_of("anna", None, Some("key")),
+            person_of("anna", None, None),
+            person_of("", None, Some("key")),
+            person_of("mary jane", None, Some("o'brien")),
+            person_of("Élodie", None, Some("Dubois")),
+            person_of("ann%givenname", None, Some("key")),
+            person_of("anna", Some("b%d"), Some("key")),
+            person_of(&long, None, Some("key")),
+        ];
+        let work = Work::Fixed(&people);
+        let mut plugins = fmt::static_plugins();
+        fmt::mark_ascii_duplicates(&mut plugins);
+        let mut general = plugins.clone();
+        for plugin in &mut general {
+            plugin.ascii_parts = None;
+        }
+        let ctx = Ctx::new(String::new(), String::new());
+        for verbose in [false, true] {
+            for suffix in [None, Some(b"@example.com".to_vec())] {
+                let mut opts = opts();
+                opts.case_insensitive = true;
+                opts.verbose = verbose;
+                opts.suffix = suffix;
+                assert_eq!(
+                    run_serial(work, &plugins, &ctx, &opts, 16_384).unwrap(),
+                    run_serial(work, &general, &ctx, &opts, 16_384).unwrap()
+                );
+            }
         }
     }
 

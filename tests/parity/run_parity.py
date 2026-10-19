@@ -117,6 +117,14 @@ def normalise_recognise(b: bytes):
 def build_cases():
     C = []
 
+    # Additional cases from the Go repository's broader compatibility matrix.
+    C.append(("names", ["Mary", "Beth", "Key", "-F", "%%f"]))
+    for case in ["true", "false"]:
+        C.append(("names", ["Mary-Jane", "De La Cruz", "-F", "%%f", "-C", case]))
+        C.append(("names", ["ΟΣ", "ΣΟΣ", "-C", case]))
+    C.append(("listfmt", ["-v", "-l"]))
+    C.append(("names", ["Anna", "Key", "-f", "first.last", "-@", "@ΟΣ.EXAMPLE"]))
+
     # --- small / common cases -------------------------------------------
     C += [("names", ["anna"]),
           ("names", ["anna", "key"]),

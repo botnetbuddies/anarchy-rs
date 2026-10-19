@@ -28,7 +28,7 @@ python3 tests/parity/run_parity.py
 ```
 
 The parity gate must be green. It runs the original Ruby script and the Rust
-binary over 444 cases and compares output sets; see `tests/parity/run_parity.py`
+binary over 451 cases and compares output sets; see `tests/parity/run_parity.py`
 for how the oracle is chosen (stock Ruby where it works, otherwise the
 pre-3.2 `Object#=~` shim).
 

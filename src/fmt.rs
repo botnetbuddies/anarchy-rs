@@ -103,6 +103,13 @@ pub struct Plugin {
     /// round-based expansion; the 24 static templates never do.
     pub strict: bool,
     pub required_mask: u8,
+    /// Up to three field/dot indexes for token-free, lowercase ASCII names.
+    /// Index 6 is a dot and 7 is empty. Custom and expanding formats use None.
+    pub ascii_parts: Option<[u8; 3]>,
+    /// An earlier selected format emits the same ASCII recipe.
+    pub ascii_duplicate: bool,
+    /// Rare `%%` templates need Ruby's ordered named-field replacements.
+    pub sequential_source: Option<Vec<u8>>,
 }
 
 /// ABK -> format string, replicating the original's ordered `gsub!` sequence.
@@ -241,6 +248,13 @@ fn format_plugin(name: &str, raw: &str, abk: bool, strict: bool) -> Plugin {
         raw.to_string()
     };
     let (segs, lits) = parse_template(&expanded);
+    let ascii_parts = if strict {
+        None
+    } else {
+        compile_ascii_parts(&segs, &lits)
+    };
+    let sequential_source =
+        (strict && expanded.contains("%%")).then(|| expanded.as_bytes().to_vec());
     let kind = PluginKind::Format { segs, lits };
     let required_mask = compute_required_mask(&kind);
     Plugin {
@@ -248,7 +262,41 @@ fn format_plugin(name: &str, raw: &str, abk: bool, strict: bool) -> Plugin {
         kind,
         strict,
         required_mask,
+        ascii_parts,
+        ascii_duplicate: false,
+        sequential_source,
     }
+}
+
+/// Run after format selection: a subset may omit the earlier equivalent format.
+pub fn mark_ascii_duplicates(plugins: &mut [Plugin]) {
+    for i in 0..plugins.len() {
+        plugins[i].ascii_duplicate = plugins[i].ascii_parts.is_some()
+            && plugins[..i]
+                .iter()
+                .any(|p| p.ascii_parts == plugins[i].ascii_parts);
+    }
+}
+
+fn compile_ascii_parts(segs: &[Seg], lits: &[u8]) -> Option<[u8; 3]> {
+    use crate::names::*;
+    if segs.len() > 3 {
+        return None;
+    }
+    let mut parts = [7; 3];
+    for (slot, seg) in parts.iter_mut().zip(segs) {
+        *slot = match *seg {
+            Seg::FirstUpper | Seg::FirstLower => FIRSTNAME as u8,
+            Seg::MiddleUpper | Seg::MiddleLower => MIDDLENAME as u8,
+            Seg::LastUpper | Seg::LastLower => LASTNAME as u8,
+            Seg::FirstInitUpper | Seg::FirstInitLower => FIRSTINITIAL as u8,
+            Seg::MiddleInitUpper | Seg::MiddleInitLower => MIDDLEINITIAL as u8,
+            Seg::LastInitUpper | Seg::LastInitLower => LASTINITIAL as u8,
+            Seg::Lit(a, b) if &lits[a as usize..b as usize] == b"." => 6,
+            _ => return None,
+        };
+    }
+    Some(parts)
 }
 
 /// The 24 static plugins, in registration order (`format-plugins.rb`).
@@ -262,12 +310,18 @@ pub fn static_plugins() -> Vec<Plugin> {
             kind: PluginKind::TruncFirstLast8,
             strict: false,
             required_mask: (1 << crate::names::FIRSTNAME) | (1 << crate::names::LASTNAME),
+            ascii_parts: None,
+            ascii_duplicate: false,
+            sequential_source: None,
         },
         Plugin {
             name: "first[4]last[4]".to_string(),
             kind: PluginKind::TruncFirst4Last4,
             strict: false,
             required_mask: (1 << crate::names::FIRSTNAME) | (1 << crate::names::LASTNAME),
+            ascii_parts: None,
+            ascii_duplicate: false,
+            sequential_source: None,
         },
         format_plugin("firstl", "annak", true, false),
         format_plugin("f.last", "a.key", true, false),
@@ -396,6 +450,39 @@ pub fn resolve_string<N: NameFields + ?Sized>(
     }
 }
 
+/// A replacement can introduce a token consumed later in Ruby's gsub order:
+/// `%%f` -> `%mary` -> `bethary` when the middle name is Beth.
+pub fn resolve_sequential<N: NameFields + ?Sized>(
+    source: &[u8],
+    name: &N,
+    out: &mut Vec<u8>,
+    tmp: &mut Vec<u8>,
+) {
+    const ORDER: [&str; 12] = [
+        "%F", "%M", "%L", "%f", "%m", "%l", "%i.F", "%i.M", "%i.L", "%i.f", "%i.m", "%i.l",
+    ];
+    out.clear();
+    out.extend_from_slice(source);
+    let mut replacement = Vec::new();
+    for token in ORDER {
+        let needle = token.as_bytes();
+        if !out.windows(needle.len()).any(|w| w == needle) {
+            continue;
+        }
+        let seg = TOKENS.iter().find(|(t, _)| *t == token).unwrap().1;
+        resolve_string(&[seg], &[], name, &mut replacement);
+        tmp.clear();
+        let mut rest = out.as_slice();
+        while let Some(i) = rest.windows(needle.len()).position(|w| w == needle) {
+            tmp.extend_from_slice(&rest[..i]);
+            tmp.extend_from_slice(&replacement);
+            rest = &rest[i + needle.len()..];
+        }
+        tmp.extend_from_slice(rest);
+        std::mem::swap(out, tmp);
+    }
+}
+
 /// Resolve a static template for a case-insensitive run.
 ///
 /// Uppercase segments use `downcase(upcase_it(x))` — the exact composition the
@@ -497,7 +584,7 @@ fn val_raw(v: Option<&[u8]>, out: &mut Vec<u8>, missing: &[u8]) {
 
 /// One scan over the six fields, returning:
 ///
-/// * `plain`: every present field is lowercase ASCII (so case folding is a
+/// * `plain`: every present field is lowercase ASCII without `%` tokens (so case folding is a
 ///   no-op and the uppercase composition equals the lowercase one), and
 /// * `clean`: no field contains a space or apostrophe (so the post-processing
 ///   `delete(" ")/delete("'")` pass cannot change the candidate).
@@ -517,7 +604,7 @@ pub fn field_props<N: NameFields + ?Sized>(name: &N) -> (bool, bool) {
     ];
     for f in fields.iter().flatten() {
         for &b in *f {
-            if b >= 0x80 || b.is_ascii_uppercase() {
+            if b >= 0x80 || b.is_ascii_uppercase() || b == b'%' {
                 plain = false;
             }
             if b == b' ' || b == b'\'' {
@@ -752,6 +839,8 @@ mod tests {
         assert_eq!(props(["Anna", "key", "", "", "", ""]), (false, true));
         // Non-ASCII forces the folding path.
         assert_eq!(props(["é", "key", "", "", "", ""]), (false, true));
+        // A percent sign may be an expansion token inside a supplied name.
+        assert_eq!(props(["ann%d", "key", "", "", "", ""]), (false, true));
         // A space or apostrophe is `plain` but not `clean`.
         assert_eq!(props(["mary jane", "key", "", "", "", ""]), (true, false));
         assert_eq!(props(["o'brien", "key", "", "", "", ""]), (true, false));

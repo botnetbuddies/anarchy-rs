@@ -77,7 +77,7 @@ impl FinalSink {
                 let (off, len) = self.slots[i];
                 if len as usize == key.len() {
                     let existing = &self.out[off as usize..off as usize + len as usize];
-                    if existing == key {
+                    if util::bytes_equal(existing, key) {
                         return;
                     }
                 }
@@ -403,7 +403,11 @@ pub fn all_outputs<N: NameFields + ?Sized>(
             _ => GenRet::Nil,
         },
         PluginKind::Format { segs, lits } => {
-            fmt::resolve_string(segs, lits, name, &mut sc.resolved);
+            if let Some(source) = &p.sequential_source {
+                fmt::resolve_sequential(source, name, &mut sc.resolved, &mut sc.tmp);
+            } else {
+                fmt::resolve_string(segs, lits, name, &mut sc.resolved);
+            }
             let occ = fmt::tokenize(&sc.resolved);
             if !occ.is_empty() && !substitute {
                 return GenRet::Nil;
@@ -438,11 +442,39 @@ pub fn gen_person<N: NameFields + ?Sized, S: SinkTarget>(
 ) -> Result<(), String> {
     // One scan per person replaces a scan of every field in every template.
     let (plain, clean) = fmt::field_props(name);
+    let ascii_fields = if plain && clean && opts.case_insensitive && !opts.substitute {
+        Some([
+            name.firstname().unwrap_or_default(),
+            name.lastname().unwrap_or_default(),
+            name.firstinitial().unwrap_or_default(),
+            name.lastinitial().unwrap_or_default(),
+            name.middlename().unwrap_or_default(),
+            name.middleinitial().unwrap_or_default(),
+            b".",
+            b"",
+        ])
+    } else {
+        None
+    };
     for p in plugins {
         if !opts.substitute && (present_mask & p.required_mask) != p.required_mask {
             if opts.verbose {
                 em.comment(&p.name, None);
             }
+            continue;
+        }
+        if let (Some(fields), Some(parts)) = (&ascii_fields, p.ascii_parts) {
+            if opts.verbose {
+                em.comment(&p.name, Some(1));
+            }
+            if p.ascii_duplicate {
+                continue;
+            }
+            sc.resolved.clear();
+            for i in parts {
+                util::push_bytes(&mut sc.resolved, fields[i as usize]);
+            }
+            em.emit_known_lower(&sc.resolved);
             continue;
         }
         match &p.kind {
@@ -486,7 +518,9 @@ pub fn gen_person<N: NameFields + ?Sized, S: SinkTarget>(
                 // a case-insensitive run can resolve straight to final form and
                 // skip `Emitter::emit`'s second case-folding pass.
                 let lower_ready = opts.case_insensitive && !p.strict;
-                if lower_ready {
+                if let Some(source) = &p.sequential_source {
+                    fmt::resolve_sequential(source, name, &mut sc.resolved, &mut sc.tmp);
+                } else if lower_ready {
                     if plain {
                         fmt::resolve_string_lower_raw(segs, lits, name, &mut sc.resolved);
                     } else {
@@ -634,7 +668,11 @@ fn per_person_cost<N: NameFields + ?Sized>(
 ) -> u64 {
     let mut sc = Scratch::new();
     let mut per_person: u64 = 0;
+    let (plain, clean) = fmt::field_props(name);
     for p in plugins {
+        if p.ascii_duplicate && plain && clean && opts.case_insensitive && !opts.substitute {
+            continue;
+        }
         match &p.kind {
             PluginKind::TruncFirstLast8 | PluginKind::TruncFirst4Last4 => {
                 per_person = per_person.saturating_add(1);

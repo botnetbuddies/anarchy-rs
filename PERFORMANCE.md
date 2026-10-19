@@ -18,6 +18,17 @@ field scan per person identifies lowercase ASCII names and names without spaces
 or apostrophes, allowing those candidates to avoid repeated case conversion
 and cleanup. Custom formats retain the original round-based expansion rules.
 
+Ordinary ASCII formats also have a short recipe containing only field and dot
+indexes. When all required fields are present and names contain no spaces,
+apostrophes or percent signs, generation can copy those parts without running
+the general template interpreter or scanning the candidate for expansion tokens.
+Equivalent case-folded recipes are marked after format selection and generated
+once per person. Verbose comments remain unchanged. Unicode names, substitutions
+and custom formats retain the general paths.
+
+Short deduplication keys use exact, word-sized comparisons in safe Rust. First
+and last words overlap to cover all bytes; longer keys use slice equality.
+
 For larger jobs, workers take chunks from an atomic cursor and send numbered
 batches through a bounded channel. One merger processes those batches in input
 order and deduplicates across the whole run. Workers compute each candidate's
@@ -58,6 +69,43 @@ Input SHA-256: `50856bdff1ab29e5cb31e1538a5db7a983665963e2b01d65722f6806af6b35df
 These measurements describe this workload and machine; they are not a claim
 about every input or a general Rust-versus-Go comparison.
 
+## Follow-up optimization
+
+Compared with `d238594` on the same machine and 20k-row CSV, using Hyperfine
+with `-N --warmup 50 --runs 500`. Each command writes to `/dev/null`; the build
+uses the same portable release profile as before.
+
+| Version | Mean ± standard deviation |
+|---|---:|
+| Go (`username-anarchy-ng`, comparison binary) | 22.3 ± 4.3 ms |
+| Rust before (`d238594`) | 20.0 ± 4.5 ms |
+| Rust optimized | 15.4 ± 4.3 ms |
+
+The optimized build used about 23% less wall time than the previous Rust
+build in this run (1.30× faster), and was 1.45× faster than the compared Go
+binary. Separate single-run peak RSS measurements dropped from
+30.9 MiB to 16.3 MiB. Avoiding equivalent recipes also improves the candidate
+estimate, preventing an oversized initial deduplication table on this input.
+The output SHA-256 is unchanged from the transfer check above.
+
+A larger 200k-row input improved from
+227.7 to 207.3 ms median across 20 interleaved process runs per version.
+Both versions produced identical bytes. A separate 100-run Hyperfine check with
+only `first.last` selected improved from 7.5 to 4.9 ms mean.
+
+Callgrind on the serial 20k-row workload counted 234,850,088 instructions before
+and 125,459,977 after (about 47% fewer). The original profile identified template
+dispatch, candidate token scans and short-key `memcmp` calls as significant
+costs. These are instrumented instruction counts; the table above records
+native process timings.
+
+Validation passes all 451 cases in this repository in normal and forced-parallel
+mode, plus the Go repository's 747-case live Ruby matrix with exact bytes and
+ordering. That broader matrix exposed six pre-existing differences in Greek
+case folding, sequential `%%` formatting and verbose format listings; those are
+fixed and covered by the Rust harness now. Unit tests check recipe equivalence
+with the general engine and every byte position across short-key boundaries.
+
 ## Reproducing a measurement
 
 Build both versions with the same Rust toolchain and release profile. Save the
@@ -75,8 +123,11 @@ ordering across batch boundaries. `python3 bench/run_bench.py` generates larger
 inputs and compares with Ruby, including substitution and auto workloads.
 
 `USERNAME_ANARCHY_THREADS=1` forces serial execution. A positive value sets the
-worker limit. By default Rust uses the available CPU count when the candidate
-estimate exceeds 10,000. `USERNAME_ANARCHY_MIN_PARALLEL` changes that threshold;
+worker limit. Without an explicit worker override, Rust budgets one worker per 100,000
+estimated candidates, with at least two workers for parallel jobs and up to
+the available CPU count. This avoids launching a
+thread per CPU for short jobs. The estimate accounts for equivalent ASCII
+recipes that generation can omit. The separate parallel threshold is 10,000. `USERNAME_ANARCHY_MIN_PARALLEL` changes that threshold;
 setting it to `0` is useful for exercising the worker path in tests.
 
 ## Memory limits

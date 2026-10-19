@@ -46,6 +46,35 @@ pub fn strip(s: &[u8]) -> &[u8] {
     &s[a..b]
 }
 
+/// Exact equality for short usernames without a call to musl's bytewise memcmp.
+/// Overlapping first/last words cover every byte, including unaligned slices.
+#[inline(always)]
+pub fn bytes_equal(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let n = a.len();
+    if n > 16 {
+        a == b
+    } else if n >= 8 {
+        u64::from_ne_bytes(a[..8].try_into().unwrap())
+            == u64::from_ne_bytes(b[..8].try_into().unwrap())
+            && u64::from_ne_bytes(a[n - 8..].try_into().unwrap())
+                == u64::from_ne_bytes(b[n - 8..].try_into().unwrap())
+    } else if n >= 4 {
+        u32::from_ne_bytes(a[..4].try_into().unwrap())
+            == u32::from_ne_bytes(b[..4].try_into().unwrap())
+            && u32::from_ne_bytes(a[n - 4..].try_into().unwrap())
+                == u32::from_ne_bytes(b[n - 4..].try_into().unwrap())
+    } else if n >= 2 {
+        u16::from_ne_bytes(a[..2].try_into().unwrap())
+            == u16::from_ne_bytes(b[..2].try_into().unwrap())
+            && a[n - 1] == b[n - 1]
+    } else {
+        n == 0 || a[0] == b[0]
+    }
+}
+
 /// Delimiter used when splitting an input file.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Delim {
@@ -191,11 +220,16 @@ pub fn downcase_into(s: &[u8], out: &mut Vec<u8>) {
         ascii_lowercase_in_place(&mut out[start..]);
     } else {
         let text = String::from_utf8_lossy(s);
-        out.extend_from_slice(text.to_lowercase().as_bytes());
+        // Ruby uses context-free case mappings; str::to_lowercase applies the
+        // contextual final-sigma rule (ΟΣ -> ος), which Ruby does not.
+        for c in text.chars().flat_map(char::to_lowercase) {
+            let mut bytes = [0; 4];
+            out.extend_from_slice(c.encode_utf8(&mut bytes).as_bytes());
+        }
     }
 }
 
-/// Ruby `String#downcase`. ASCII fast path; Unicode fallback via `str::to_lowercase`.
+/// Ruby `String#downcase`. ASCII fast path; context-free Unicode fallback.
 pub fn downcase(s: &[u8]) -> Vec<u8> {
     let mut v = Vec::with_capacity(s.len());
     downcase_into(s, &mut v);
@@ -302,8 +336,7 @@ pub fn upcase_it_into(s: &[u8], out: &mut Vec<u8>) -> bool {
                 let mut buf = [0u8; 4];
                 out.extend_from_slice(c.encode_utf8(&mut buf).as_bytes());
             }
-            let rest = chars.as_str().to_lowercase();
-            out.extend_from_slice(rest.as_bytes());
+            downcase_into(chars.as_str().as_bytes(), out);
         }
     }
     true
@@ -337,9 +370,9 @@ pub fn upcase_then_downcase_into(s: &[u8], out: &mut Vec<u8>) -> bool {
     let rest = &text[end..];
     // `downcase(upcase(first))` — not always `downcase(first)` (e.g. ß -> ss).
     let first_up = first.to_uppercase();
-    out.extend_from_slice(first_up.to_lowercase().as_bytes());
+    downcase_into(first_up.as_bytes(), out);
     // `downcase(downcase(rest)) == downcase(rest)`.
-    out.extend_from_slice(rest.to_lowercase().as_bytes());
+    downcase_into(rest.as_bytes(), out);
     true
 }
 
@@ -377,5 +410,25 @@ pub fn nth_char_boundary(s: &[u8], n: usize) -> usize {
 pub fn strip_spaces_and_apostrophes(s: &mut Vec<u8>) {
     if s.iter().any(|&b| b == b' ' || b == b'\'') {
         s.retain(|&b| b != b' ' && b != b'\'');
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::bytes_equal;
+
+    #[test]
+    fn short_equality_checks_every_byte_and_length() {
+        for n in 0..=64 {
+            let bytes: Vec<u8> = (0..n + 1).map(|i| (i * 71) as u8).collect();
+            let a = &bytes[1..]; // Include unaligned word reads.
+            assert!(bytes_equal(a, a));
+            assert!(!bytes_equal(a, &bytes));
+            for i in 0..n {
+                let mut different = a.to_vec();
+                different[i] ^= 1;
+                assert!(!bytes_equal(a, &different), "length {n}, byte {i}");
+            }
+        }
     }
 }
