@@ -26,6 +26,6 @@ Everything else uses the Rust standard library.
 
 ## Test / benchmark tooling (not shipped)
 
-* `hyperfine` (Apache-2.0 OR MIT) — benchmark timing.
-* Python 3 (PSF-2.0) — parity harness and benchmark driver.
-* Ruby (Ruby license / BSD-2-Clause) — runs the oracle.
+* `hyperfine` (Apache-2.0 OR MIT) - benchmark timing.
+* Python 3 (PSF-2.0) - parity harness and benchmark driver.
+* Ruby (Ruby license / BSD-2-Clause) - runs the oracle.

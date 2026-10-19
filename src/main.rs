@@ -1,4 +1,4 @@
-//! Username Anarchy — high-performance Rust rewrite.
+//! Username Anarchy - high-performance Rust rewrite.
 //!
 //! Behavioural parity with `urbanadventurer/username-anarchy` (Ruby, v0.6) is
 //! the primary goal. See PERFORMANCE.md for the full list of intentionally
@@ -6,14 +6,16 @@
 
 mod engine;
 mod fmt;
+mod hash;
 mod names;
 mod util;
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
-use engine::{AutoNames, Emitter, GenOpts, GenRet, Scratch};
+use engine::{AutoNames, Emitter, GenOpts, GenRet, Output, Scratch};
 use fmt::{Ctx, Plugin};
 use names::{Name, Person};
 
@@ -418,6 +420,9 @@ fn run() -> i32 {
     }
 
     let mut prefix: Vec<u8> = Vec::new();
+    // Borrowed input rows: the file bytes plus one `(start, end)` range per
+    // field, so a multi-million-row file costs no per-field allocation.
+    let mut file: Option<(Vec<u8>, Vec<names::Row>)> = None;
     if let Some(path) = &opts.input_file {
         let data = match std::fs::read(path) {
             Ok(d) => d,
@@ -426,10 +431,10 @@ fn run() -> i32 {
                 return 1;
             }
         };
-        match names::load_names_list(&data) {
+        match names::load_names_list(data) {
             Ok(loaded) => {
                 prefix.extend_from_slice(&loaded.stdout);
-                people.extend(loaded.people);
+                file = Some((loaded.data, loaded.rows));
             }
             Err(e) => {
                 eprintln!("{}", e);
@@ -469,6 +474,14 @@ fn run() -> i32 {
     let mut auto_given: Vec<Option<Vec<u8>>> = Vec::new();
     let mut auto_family: Vec<Option<Vec<u8>>> = Vec::new();
     let is_auto = opts.no_input_names && opts.format_to_recognise.is_none();
+    // In `-a` mode the original folds the `-i` rows into the cross-product's
+    // head, so convert the borrowed rows back to owned people here (the head is
+    // always tiny compared to the 10^8-entry dictionaries).
+    if is_auto {
+        if let Some((data, rows)) = file.take() {
+            people.extend(names::rows_to_people(&data, &rows));
+        }
+    }
     if is_auto {
         auto_family = match read_auto_lines(&opts.family_names) {
             Ok(v) => v,
@@ -493,6 +506,12 @@ fn run() -> i32 {
                 family: &auto_family,
             },
         }
+    } else if let Some((data, rows)) = &file {
+        Work::File {
+            head: &people,
+            data: data.as_slice(),
+            rows: rows.as_slice(),
+        }
     } else {
         Work::Fixed(&people)
     };
@@ -509,6 +528,9 @@ fn run() -> i32 {
 
     let est = match &work {
         Work::Fixed(people) => engine::estimate(people, &selected, &ctx, &gen_opts),
+        Work::File { head, data, rows } => {
+            engine::estimate_file(head, data, rows, &selected, &ctx, &gen_opts)
+        }
         Work::Auto { head, names } => {
             engine::estimate_auto(head, *names, &selected, &ctx, &gen_opts)
         }
@@ -543,10 +565,13 @@ fn run() -> i32 {
     };
 
     let stdout = std::io::stdout();
-    let mut lock = stdout.lock();
-    let _ = lock.write_all(&prefix);
-    let _ = lock.write_all(&generated);
-    let _ = lock.flush();
+    let lock = stdout.lock();
+    // One buffered writer for both the warning preamble and the generated
+    // lines; `generated` streams straight through without a final copy.
+    let mut out = std::io::BufWriter::with_capacity(1 << 20, lock);
+    let _ = out.write_all(&prefix);
+    let _ = generated.write_all(&mut out);
+    let _ = out.flush();
     0
 }
 
@@ -752,6 +777,12 @@ fn read_auto_lines(path: &str) -> Result<Vec<Option<Vec<u8>>>, String> {
 #[derive(Clone, Copy)]
 enum Work<'a> {
     Fixed(&'a [Person]),
+    /// Borrowed input rows: fields are `(start, end)` ranges into `data`.
+    File {
+        head: &'a [Person],
+        data: &'a [u8],
+        rows: &'a [names::Row],
+    },
     Auto {
         head: &'a [Person],
         names: AutoNames<'a>,
@@ -764,11 +795,14 @@ fn run_serial(
     ctx: &Ctx,
     opts: &GenOpts,
     est: u64,
-) -> Result<Vec<u8>, String> {
+) -> Result<Output, String> {
     let mut em = Emitter::with_capacity(opts, engine::worker_hint(est, 1));
     let mut sc = Scratch::new();
     match work {
         Work::Fixed(people) => engine::gen_people(people, plugins, ctx, opts, &mut em, &mut sc)?,
+        Work::File { head, data, rows } => {
+            engine::gen_rows(data, rows, head, plugins, ctx, opts, &mut em, &mut sc)?
+        }
         Work::Auto { head, names } => {
             engine::gen_auto(head, names, plugins, ctx, opts, &mut em, &mut sc)?
         }
@@ -783,23 +817,99 @@ fn run_parallel(
     opts: &GenOpts,
     threads: usize,
     est: u64,
-) -> Result<Vec<u8>, String> {
+) -> Result<Output, String> {
     let hint = engine::worker_hint(est, threads);
     let mut err: Option<String> = None;
     let mut sinks: Vec<engine::Sink> = Vec::new();
+    // Work counters live for the whole scope, because handles are joined after
+    // the `match` (and so outlive the arm that borrows them).
+    let fixed_cursor = AtomicUsize::new(0);
+    let auto_cursor = AtomicUsize::new(0);
+    let file_cursor = AtomicUsize::new(0);
     std::thread::scope(|s| {
         let mut handles = Vec::new();
         match work {
             Work::Fixed(people) => {
-                let chunk = people.len().div_ceil(threads).max(1);
-                for chunk_people in people.chunks(chunk) {
+                // Dynamic scheduling: workers pull `chunk` rows at a time, so a
+                // few expensive rows cannot strand an entire static range.
+                let workers = threads.min(people.len().max(1));
+                let chunk = people.len().div_ceil(workers.saturating_mul(8)).max(1);
+                let cursor = &fixed_cursor;
+                for _ in 0..workers {
                     handles.push(s.spawn(move || {
                         let mut em = Emitter::with_capacity(opts, hint);
                         let mut sc = Scratch::new();
-                        let r =
-                            engine::gen_people(chunk_people, plugins, ctx, opts, &mut em, &mut sc);
+                        let mut result = Ok(());
+                        loop {
+                            let start = cursor.fetch_add(chunk, Ordering::Relaxed);
+                            if start >= people.len() {
+                                break;
+                            }
+                            let end = start.saturating_add(chunk).min(people.len());
+                            if let Err(e) = engine::gen_people(
+                                &people[start..end],
+                                plugins,
+                                ctx,
+                                opts,
+                                &mut em,
+                                &mut sc,
+                            ) {
+                                result = Err(e);
+                                break;
+                            }
+                        }
+                        (result, em.into_sink())
+                    }));
+                }
+            }
+            Work::File { head, data, rows } => {
+                if rows.is_empty() {
+                    // Nothing to schedule; just emit the positional head.
+                    handles.push(s.spawn(move || {
+                        let mut em = Emitter::with_capacity(opts, hint);
+                        let mut sc = Scratch::new();
+                        let r = engine::gen_rows(
+                            data, rows, head, plugins, ctx, opts, &mut em, &mut sc,
+                        );
                         (r, em.into_sink())
                     }));
+                } else {
+                    // Same dynamic scheduling as `Fixed`, but the positional head
+                    // is emitted once by whichever worker draws the first chunk.
+                    let workers = threads.min(rows.len().max(1));
+                    let chunk = rows.len().div_ceil(workers.saturating_mul(8)).max(1);
+                    let cursor = &file_cursor;
+                    for _ in 0..workers {
+                        handles.push(s.spawn(move || {
+                            let mut em = Emitter::with_capacity(opts, hint);
+                            let mut sc = Scratch::new();
+                            let mut result = Ok(());
+                            loop {
+                                let start = cursor.fetch_add(chunk, Ordering::Relaxed);
+                                if start >= rows.len() {
+                                    break;
+                                }
+                                let end = start.saturating_add(chunk).min(rows.len());
+                                // The head is generated exactly once, by the
+                                // first worker to pull a chunk.
+                                let head_part: &[Person] = if start == 0 { head } else { &[] };
+                                if let Err(e) = engine::gen_rows(
+                                    data,
+                                    &rows[start..end],
+                                    head_part,
+                                    plugins,
+                                    ctx,
+                                    opts,
+                                    &mut em,
+                                    &mut sc,
+                                ) {
+                                    result = Err(e);
+                                    break;
+                                }
+                            }
+                            (result, em.into_sink())
+                        }));
+                    }
                 }
             }
             Work::Auto { head, names } => {
@@ -816,21 +926,40 @@ fn run_parallel(
                         (r, em.into_sink())
                     }));
                 } else {
-                    let chunk = names.family.len().div_ceil(threads).max(1);
-                    for (i, fam_chunk) in names.family.chunks(chunk).enumerate() {
-                        // The sentinel/positional people are generated once.
-                        let head_part: &[Person] = if i == 0 { head } else { &[] };
-                        let part = AutoNames {
-                            given: names.given,
-                            family: fam_chunk,
-                        };
+                    let workers = threads.min(names.family.len().max(1));
+                    let chunk = names
+                        .family
+                        .len()
+                        .div_ceil(workers.saturating_mul(8))
+                        .max(1);
+                    let cursor = &auto_cursor;
+                    for _ in 0..workers {
+                        let given = names.given;
+                        let family = names.family;
                         handles.push(s.spawn(move || {
                             let mut em = Emitter::with_capacity(opts, hint);
                             let mut sc = Scratch::new();
-                            let r = engine::gen_auto(
-                                head_part, part, plugins, ctx, opts, &mut em, &mut sc,
-                            );
-                            (r, em.into_sink())
+                            let mut result = Ok(());
+                            loop {
+                                let start = cursor.fetch_add(chunk, Ordering::Relaxed);
+                                if start >= family.len() {
+                                    break;
+                                }
+                                let end = start.saturating_add(chunk).min(family.len());
+                                // The sentinel/positional people are generated once.
+                                let head_part: &[Person] = if start == 0 { head } else { &[] };
+                                let part = AutoNames {
+                                    given,
+                                    family: &family[start..end],
+                                };
+                                if let Err(e) = engine::gen_auto(
+                                    head_part, part, plugins, ctx, opts, &mut em, &mut sc,
+                                ) {
+                                    result = Err(e);
+                                    break;
+                                }
+                            }
+                            (result, em.into_sink())
                         }));
                     }
                 }
@@ -855,54 +984,7 @@ fn run_parallel(
     if let Some(e) = err {
         return Err(e);
     }
-    Ok(merge_sinks(sinks).finish())
-}
-
-/// Merge per-worker sinks pairwise (`log2(workers)` rounds) so the merge uses
-/// the available cores instead of a single-threaded serial fold.
-fn merge_sinks(sinks: Vec<engine::Sink>) -> engine::Sink {
-    if sinks.len() <= 4 {
-        // At low worker counts the serial tail is a few percent at most, and
-        // folding in one thread avoids the extra per-merge-thread arenas.
-        let mut it = sinks.into_iter();
-        return match it.next() {
-            None => engine::Sink::new(),
-            Some(mut acc) => {
-                for other in it {
-                    acc.absorb(other);
-                }
-                acc
-            }
-        };
-    }
-    let mut sinks = sinks;
-    while sinks.len() > 1 {
-        let mut pairs: Vec<(engine::Sink, Option<engine::Sink>)> =
-            Vec::with_capacity(sinks.len().div_ceil(2));
-        let mut it = sinks.into_iter();
-        while let Some(a) = it.next() {
-            pairs.push((a, it.next()));
-        }
-        let mut next = Vec::with_capacity(pairs.len());
-        std::thread::scope(|s| {
-            let mut handles = Vec::with_capacity(pairs.len());
-            for (a, b) in pairs {
-                handles.push(s.spawn(move || match b {
-                    Some(b) => {
-                        let mut a = a;
-                        a.absorb(b);
-                        a
-                    }
-                    None => a,
-                }));
-            }
-            for h in handles {
-                next.push(h.join().expect("merge thread panicked"));
-            }
-        });
-        sinks = next;
-    }
-    sinks.pop().unwrap_or_else(engine::Sink::new)
+    Ok(engine::merge(sinks, threads))
 }
 
 // ---------------------------------------------------------------------------

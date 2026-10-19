@@ -1,6 +1,7 @@
 # Build artifacts
 /target/
 /dist/
+*.zip
 
 # Generated benchmark inputs and raw results
 /bench/data/

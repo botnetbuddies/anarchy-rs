@@ -3,7 +3,7 @@
 Thanks for taking a look. This project has one non-negotiable rule:
 
 > **Behavioural parity with the original Ruby tool comes before speed.** If a
-> change alters the *set* of output lines for any invocation, it is a bug — even
+> change alters the *set* of output lines for any invocation, it is a bug - even
 > if the original's behaviour looks wrong.
 
 ## Ground rules

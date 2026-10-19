@@ -49,9 +49,9 @@ pub fn strip(s: &[u8]) -> &[u8] {
 /// Delimiter used when splitting an input file.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Delim {
-    /// `String#split(" ")` — awk-style whitespace mode.
+    /// `String#split(" ")` - awk-style whitespace mode.
     Space,
-    /// `String#split(",")` / `String#split("\t")` — literal separator.
+    /// `String#split(",")` / `String#split("\t")` - literal separator.
     Byte(u8),
 }
 
@@ -273,7 +273,7 @@ pub fn upcase_then_downcase_into(s: &[u8], out: &mut Vec<u8>) -> bool {
     let end = nth_char_boundary(text.as_bytes(), 1);
     let first = &text[..end];
     let rest = &text[end..];
-    // `downcase(upcase(first))` — not always `downcase(first)` (e.g. ß -> ss).
+    // `downcase(upcase(first))` - not always `downcase(first)` (e.g. ß -> ss).
     let first_up = first.to_uppercase();
     out.extend_from_slice(first_up.to_lowercase().as_bytes());
     // `downcase(downcase(rest)) == downcase(rest)`.

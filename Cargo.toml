@@ -12,6 +12,12 @@ path = "src/main.rs"
 [dependencies]
 rustc-hash = "2"
 
+[features]
+default = ["hash-fx"]
+hash-fx = []
+hash-wy = []
+hash-rapid = []
+
 [profile.release]
 opt-level = 3
 lto = true

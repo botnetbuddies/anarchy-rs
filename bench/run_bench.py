@@ -20,10 +20,13 @@ Notes
 
 Usage
 -----
-    python3 bench/run_bench.py                # everything (a few minutes)
+    python3 bench/run_bench.py                # everything (~10 min; the Ruby side dominates)
     python3 bench/run_bench.py --quick        # skip the 100k and --auto cases
     python3 bench/run_bench.py --threads 1
     python3 bench/run_bench.py --json out.json
+
+Rows are printed (and the JSON rewritten) as each case completes, so an
+interrupted sweep still leaves usable results.
 """
 
 from __future__ import annotations
@@ -49,7 +52,12 @@ def ensure_data() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
     giv = (FB / "firstnames-top1000.txt").read_text().splitlines()
     fam = (FB / "lastnames-top1000.txt").read_text().splitlines()
-    for n, name in ((10_000, "names-10k.txt"), (100_000, "names-100k.txt")):
+    for n, name in (
+        (10_000, "names-10k.txt"),
+        (20_000, "names-20k.txt"),
+        (30_000, "names-30k.txt"),
+        (100_000, "names-100k.txt"),
+    ):
         path = DATA / name
         if path.exists() and sum(1 for _ in path.open()) == n:
             continue
@@ -98,9 +106,14 @@ def fmt_s(seconds: float) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="skip the slow 100k/auto cases")
+    ap.add_argument("--prepare-data", action="store_true", help="generate benchmark inputs and exit")
     ap.add_argument("--threads", type=int, default=None, help="Rust worker threads")
     ap.add_argument("--json", type=Path, help="also write raw results as JSON")
     args = ap.parse_args()
+
+    if args.prepare_data:
+        ensure_data()
+        return 0
 
     if not RUST.exists():
         raise SystemExit(f"missing {RUST}; run `cargo build --release` first")
@@ -113,6 +126,8 @@ def main() -> int:
         env_prefix = f"env USERNAME_ANARCHY_THREADS={args.threads} "
 
     n10 = DATA / "names-10k.txt"
+    n20 = DATA / "names-20k.txt"
+    n30 = DATA / "names-30k.txt"
     n100 = DATA / "names-100k.txt"
     g1k = FB / "firstnames-top1000.txt"
     f1k = FB / "lastnames-top1000.txt"
@@ -123,6 +138,8 @@ def main() -> int:
     cases = [
         ("tiny invocation (`anna key`)", "anna key", "anna key", False, 20, 3),
         ("10k-row input file", f"-i {n10}", f"-i {n10}", False, 5, 1),
+        ("20k-row input file", f"-i {n20}", f"-i {n20}", False, 2, 0),
+        ("30k-row input file", f"-i {n30}", f"-i {n30}", False, 2, 0),
         ("100k-row input file", f"-i {n100}", f"-i {n100}", False, 2, 0),
         # Streamed in Rust; the original materializes all 10^6 people (and
         # re-reads the given-names file once per family).
@@ -148,6 +165,9 @@ def main() -> int:
 
     rows = []
     raw = []
+    hdr = ("Case", "Rust (min)", "Ruby (min)", "Speedup", "Rust RSS MiB", "Ruby RSS MiB")
+    print(f"| {hdr[0]} | {hdr[1]} | {hdr[2]} | {hdr[3]} | {hdr[4]} | {hdr[5]} |", flush=True)
+    print("|---|---:|---:|---:|---:|---:|", flush=True)
     for label, rargs, bargs, shim, runs, warmup in cases:
         print(f"  benchmarking: {label} ...", file=sys.stderr)
         a = env_prefix + rust_cmd(rargs)
@@ -169,6 +189,9 @@ def main() -> int:
                 f"{rb['memory_peak_resident']['max'] / (1024 * 1024):.1f}",
             )
         )
+        # Print each completed row immediately: the Ruby side makes a full sweep
+        # take minutes, and an interrupt should not throw away finished cases.
+        print(f"| {rows[-1][0]} | {rows[-1][1]} | {rows[-1][2]} | {rows[-1][3]} | {rows[-1][4]} | {rows[-1][5]} |", flush=True)
         raw.append(
             {
                 "label": label,
@@ -187,16 +210,11 @@ def main() -> int:
                 "speedup": speed,
             }
         )
-
-    hdr = ("Case", "Rust (min)", "Ruby (min)", "Speedup", "Rust RSS MiB", "Ruby RSS MiB")
-    print()
-    print(f"| {hdr[0]} | {hdr[1]} | {hdr[2]} | {hdr[3]} | {hdr[4]} | {hdr[5]} |")
-    print("|---|---:|---:|---:|---:|---:|")
-    for r in rows:
-        print(f"| {r[0]} | {r[1]} | {r[2]} | {r[3]} | {r[4]} | {r[5]} |")
+        if args.json:
+            # Keep completed cases even if the sweep is interrupted.
+            args.json.write_text(json.dumps(raw, indent=2) + "\n")
 
     if args.json:
-        args.json.write_text(json.dumps(raw, indent=2) + "\n")
         print(f"\nraw results written to {args.json}", file=sys.stderr)
     return 0
 

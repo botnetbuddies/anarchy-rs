@@ -10,6 +10,8 @@ pub const LASTINITIAL: usize = 3;
 pub const MIDDLENAME: usize = 4;
 pub const MIDDLEINITIAL: usize = 5;
 
+pub type Row = [(u32, u32); 6];
+
 /// The six name fields after `Name#init` has run.
 #[derive(Clone, Default)]
 pub struct Name {
@@ -110,6 +112,45 @@ impl<'a> NameRef<'a> {
             middlename.map(first_char_slice)
         };
         let lastinitial = if nz(&p[LASTINITIAL]).is_some() {
+            firstinitial_col
+        } else {
+            lastname.map(first_char_slice)
+        };
+        NameRef {
+            firstname,
+            lastname,
+            middlename,
+            firstinitial,
+            middleinitial,
+            lastinitial,
+        }
+    }
+
+    #[inline]
+    pub fn from_ranges(data: &'a [u8], row: &Row) -> NameRef<'a> {
+        let nz = |(a, b): (u32, u32)| {
+            if a == b {
+                None
+            } else {
+                let s = &data[a as usize..b as usize];
+                if s.is_empty() {
+                    None
+                } else {
+                    Some(s)
+                }
+            }
+        };
+        let firstname = nz(row[FIRSTNAME]);
+        let middlename = nz(row[MIDDLENAME]);
+        let lastname = nz(row[LASTNAME]);
+        let firstinitial_col = nz(row[FIRSTINITIAL]);
+        let firstinitial = firstinitial_col.or_else(|| firstname.map(first_char_slice));
+        let middleinitial = if row[MIDDLEINITIAL].0 != row[MIDDLEINITIAL].1 {
+            firstinitial_col
+        } else {
+            middlename.map(first_char_slice)
+        };
+        let lastinitial = if row[LASTINITIAL].0 != row[LASTINITIAL].1 {
             firstinitial_col
         } else {
             lastname.map(first_char_slice)
@@ -258,12 +299,17 @@ fn contains(hay: &[u8], needle: &[u8]) -> bool {
 }
 
 pub struct LoadedNames {
-    pub people: Vec<Person>,
+    /// The whole file, with every normalized field appended in place.
+    pub data: Vec<u8>,
+    /// One entry per kept row, six `(start, end)` ranges into `data` indexed by
+    /// the `FIRSTNAME`…`MIDDLEINITIAL` constants. `(0, 0)` means the field was
+    /// absent or empty.
+    pub rows: Vec<Row>,
     /// Lines printed by the original while parsing unknown column headers.
     pub stdout: Vec<u8>,
 }
 
-/// Ruby `File.readlines` — split on `\n`, keeping the terminator.
+/// Ruby `File.readlines` - split on `\n`, keeping the terminator.
 fn readlines(data: &[u8]) -> Vec<&[u8]> {
     let mut out = Vec::new();
     let mut start = 0usize;
@@ -279,15 +325,54 @@ fn readlines(data: &[u8]) -> Vec<&[u8]> {
     out
 }
 
-/// `load_names_list` from the original.
-pub fn load_names_list(data: &[u8]) -> Result<LoadedNames, String> {
-    let mut lines: Vec<Vec<u8>> = readlines(data).into_iter().map(|l| l.to_vec()).collect();
-
-    if lines.first().map(|l| !looks_like_header(l)).unwrap_or(true) {
-        lines.insert(0, b"firstname lastname".to_vec());
+/// Ruby `String#strip` as a `(start, end)` range.
+#[inline]
+fn strip_range(s: &[u8]) -> (usize, usize) {
+    let mut a = 0usize;
+    let mut b = s.len();
+    while a < b && util::is_strip_ws(s[a]) {
+        a += 1;
     }
+    while b > a && util::is_strip_ws(s[b - 1]) {
+        b -= 1;
+    }
+    (a, b)
+}
 
-    let first = lines.first().cloned().unwrap_or_default();
+/// `load_names_list` from the original, without allocating per field.
+///
+/// The file is parsed into `(start, end)` ranges into a single buffer; the
+/// only bytes appended are the normalized (downcased, stripped) field values,
+/// which is what the original would have stored in each `Person` anyway.
+/// Callers that need owned [`Person`]s (the `--auto` cross-product's head)
+/// call [`rows_to_people`].
+pub fn load_names_list(data: Vec<u8>) -> Result<LoadedNames, String> {
+    // `readlines` yields contiguous, non-overlapping slices, so record them as
+    // `(start, end)` offsets into `data`.
+    let mut line_ranges: Vec<(usize, usize)> = Vec::new();
+    let mut start = 0usize;
+    for (i, &b) in data.iter().enumerate() {
+        if b == b'\n' {
+            line_ranges.push((start, i + 1));
+            start = i + 1;
+        }
+    }
+    if start < data.len() {
+        line_ranges.push((start, data.len()));
+    }
+    let (fs, fe) = line_ranges.first().copied().unwrap_or((0, 0));
+    let first_line: &[u8] = &data[fs..fe];
+
+    // The original inserts a synthetic `firstname lastname` header when the
+    // first line is not one; the delimiter is then detected from *that* header
+    // (always space), and the first real line is data. When a header is
+    // present, that header is parsed.
+    let synthetic = !looks_like_header(first_line);
+    let first: &[u8] = if synthetic {
+        b"firstname lastname"
+    } else {
+        first_line
+    };
     let delim = if first.contains(&b'\t') {
         Delim::Byte(b'\t')
     } else if first.contains(&b',') {
@@ -301,7 +386,7 @@ pub fn load_names_list(data: &[u8]) -> Result<LoadedNames, String> {
     // Header parsing.
     let mut columns: Vec<Option<usize>> = Vec::new();
     let mut stdout: Vec<u8> = Vec::new();
-    for (i, (a, b)) in util::ruby_split(&first, delim).iter().enumerate() {
+    for (i, (a, b)) in util::ruby_split(first, delim).iter().enumerate() {
         let mut header = first[*a..*b].to_vec();
         for byte in header.iter_mut() {
             *byte = byte.to_ascii_lowercase();
@@ -322,34 +407,68 @@ pub fn load_names_list(data: &[u8]) -> Result<LoadedNames, String> {
         }
     }
 
-    // Data rows.
-    let mut people: Vec<Person> = Vec::new();
-    for line in lines.iter().skip(1) {
-        if line.as_slice() == b"\n" {
+    // Only the normalized field bytes are kept; the original file buffer is
+    // dropped when this function returns.
+    let mut owned: Vec<u8> = Vec::with_capacity(data.len() / 2 + 64);
+    let mut rows: Vec<Row> = Vec::new();
+    // With a synthetic header nothing is skipped (the first line is data);
+    // with a real header, that header line is skipped.
+    let skip = if synthetic { 0 } else { 1 };
+    for &(ls, le) in line_ranges.iter().skip(skip) {
+        let line = &data[ls..le];
+        if line == b"\n" {
             continue;
         }
         let fields = util::ruby_split(line, delim);
         if fields.is_empty() {
             continue;
         }
-        let mut person: Person = Default::default();
+        let mut row: Row = [(0, 0); 6];
         for (i, (a, b)) in fields.iter().enumerate() {
-            let v = &line[*a..*b];
-            let lower = util::downcase(v);
-            let stripped = util::strip(&lower);
-            let idx = columns.get(i).copied().flatten();
-            if let Some(idx) = idx {
-                if stripped.is_empty() {
-                    person[idx] = None;
-                } else {
-                    person[idx] = Some(stripped.to_vec());
+            let idx = match columns.get(i).copied().flatten() {
+                Some(idx) => idx,
+                None => continue,
+            };
+            // Ruby downcases the value first, then strips it.
+            let (sa, sb) = strip_range(&line[*a..*b]);
+            if sa == sb {
+                row[idx] = (0, 0);
+                continue;
+            }
+            let start = owned.len() as u32;
+            util::downcase_into(&line[*a + sa..*a + sb], &mut owned);
+            row[idx] = (start, owned.len() as u32);
+        }
+        rows.push(row);
+    }
+
+    Ok(LoadedNames {
+        data: owned,
+        rows,
+        stdout,
+    })
+}
+
+/// Rebuild owned [`Person`]s from borrowed rows.
+///
+/// Only used for the `--auto` head, which is tiny; the hot `-i` path works
+/// straight off the ranges.
+pub fn rows_to_people(data: &[u8], rows: &[Row]) -> Vec<Person> {
+    let mut out: Vec<Person> = Vec::with_capacity(rows.len());
+    for row in rows {
+        let mut p: Person = Default::default();
+        for idx in 0..6 {
+            let (a, b) = row[idx];
+            if a != b {
+                let s = &data[a as usize..b as usize];
+                if !s.is_empty() {
+                    p[idx] = Some(s.to_vec());
                 }
             }
         }
-        people.push(person);
+        out.push(p);
     }
-
-    Ok(LoadedNames { people, stdout })
+    out
 }
 
 /// A wordlist loaded the way the original loads it (`readlines` then `strip!`).

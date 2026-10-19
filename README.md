@@ -3,14 +3,14 @@
 [![Release](https://img.shields.io/github/v/release/OWNER/REPO?display_name=tag)](https://github.com/OWNER/REPO/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-# username-anarchy — Rust rewrite
+# username-anarchy - Rust rewrite
 
 A single static Linux binary that reproduces
 [`urbanadventurer/username-anarchy`](https://github.com/urbanadventurer/username-anarchy)
 (v0.6, Ruby) with byte-for-byte *output-set* parity, then makes it fast.
 
 It is a drop-in replacement: the same options, the same default datasets, the
-same quirks — including the ones that look like bugs, because they change the
+same quirks - including the ones that look like bugs, because they change the
 output. See [Preserved quirks](#preserved-quirks).
 
 | | Rust | Ruby 3.4 |
@@ -39,8 +39,13 @@ make            # -> dist/username-anarchy (static, stripped) + dist/names/
 
 `cargo build --release` alone also produces a fully static binary at
 `target/x86_64-unknown-linux-musl/release/username-anarchy-rs`; `.cargo/config.toml`
-selects the musl target. No external musl toolchain is needed — modern rustc
+selects the musl target. No external musl toolchain is needed - modern rustc
 ships a self-contained musl and links it with `+crt-static`.
+
+`make native` builds the same binary with `-C target-cpu=native` for the
+machine you are on (a measured ~10% on the 100k-row case). It is deliberately
+*not* what `make dist` ships: the released binary stays baseline x86-64 so it
+runs on older CPUs.
 
 Verify:
 
@@ -111,7 +116,7 @@ semantics a normal UTF-8 environment produces.
 These are intentional. Removing them would change the output.
 
 * `Name#init` copies the *raw* `firstinitial` column into `middleinitial` and
-  `lastinitial` — a copy/paste bug in the original.
+  `lastinitial` - a copy/paste bug in the original.
 * Empty column values become `nil` before anything else, including initials.
 * Plugins return `nil` (and are silently skipped) when a substitution token is
   present and `-s` is off.
@@ -156,7 +161,7 @@ Documented rather than hidden:
 ```
 src/main.rs      CLI parsing, dataset resolution, orchestration
 src/names.rs     Name/Person, input-file parsing, wordlist loading
-src/fmt.rs       ABK→format translation, templates, expansion engine
+src/fmt.rs       ABK->format translation, templates, expansion engine
 src/engine.rs    generation, global dedup, buffered output
 src/util.rs      Ruby-compatible string helpers (+ the one unsafe block)
 tests/parity/    435-case oracle harness, fixtures, Ruby compat shim

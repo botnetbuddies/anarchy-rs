@@ -47,13 +47,13 @@ The 100k Rust number tracks host load: this sweep's `--runs 2` minimum was
 0.52 s, a focused interleaved run of the same case took 0.63 s with four
 threads and 0.71 s on one thread, and Ruby ranged from 142 s to 162 s across
 sweeps. The 4-core container was running other work throughout (load average
-3–6), so treat absolute times as pessimistic and compare ratios.
+3-6), so treat absolute times as pessimistic and compare ratios.
 <!-- BENCH:END -->
 
 ### Startup latency
 
 The tiny invocation is dominated by process start-up, dataset lookup and
-option parsing — the case where a one-shot CLI lives or dies.
+option parsing - the case where a one-shot CLI lives or dies.
 
 | | Rust (static musl) | Ruby |
 |---|---|---|
@@ -99,11 +99,11 @@ of the ordered enumeration are exactly Ruby's first N (verified by the harness).
 | `--auto` 1M people | 3.4 MiB | 278.4 MiB |
 | 1M substitutions | 44.7 MiB | 226.8 MiB |
 
-Rust stores each unique output line once in a contiguous arena plus a 12-byte
-`(offset, len, hash tag)` record, a one-byte comment flag, and one
-open-addressed table slot (two `u32`s, ~8 bytes at the 0.7 load factor). Ruby
-keeps a `Set` of `String`s plus the fully materialised expansion array, which is
-why the substitution case is several times larger.
+Rust stores each unique output line once in a 2^18-byte chunked arena plus a
+24-byte `(offset, 64-bit hash, len)` record and one open-addressed table slot (a
+`u64` hash and a `u32` index, ~12 bytes at the 0.7 load factor). Ruby keeps a
+`Set` of `String`s plus the fully materialised expansion array, which is why the
+substitution case is several times larger.
 
 ## Where the time goes
 
@@ -179,13 +179,15 @@ threads are again ~1.4× faster than one on this loaded host instead of slower.
 
 ## Optimizations kept
 
-1. **Arena de-duplication with an open-addressed table** (`src/engine.rs`).
-   Unique line bytes (plus their terminator) live in one `Vec<u8>`; an
-   `(offset, len, tag)` record per line preserves emission order; a power-of-two
-   table of `(tag, entry index)` gives O(1) membership. A duplicate costs one
-   hash, one cache-line probe and a byte comparison — no allocation. Storing the
-   tag inline avoids the second indirection a `HashMap<u64, index>` needs, and
-   lets table growth skip re-hashing the line bytes.
+1. **Chunked arena de-duplication with an open-addressed table** (`src/engine.rs`).
+   Unique line bytes (plus their terminator) live in 2^18-byte chunks addressed
+   by a packed 64-bit offset; an `(offset, 64-bit hash, len)` record per line
+   preserves emission order; a power-of-two table of `(hash, entry index)` gives
+   O(1) membership. A duplicate costs one hash, one probe and a byte comparison -
+   no allocation. Probing a miss touches only the hash array, a false match is
+   effectively impossible before the comparison, and table growth skips
+   re-hashing the line bytes. Output is no longer limited to 4 GiB, and
+   `finish()`/`write_all` stream the chunks without a flattening copy.
 
 2. **No locks on the hot path.** Workers own their sink outright. The parallel
    path generates per-chunk sinks and merges them once at the end, so there is
@@ -205,7 +207,7 @@ threads are again ~1.4× faster than one on this loaded host instead of slower.
    vector; the non-case-insensitive path inserts the caller's slice directly;
    ASCII checks gate the Unicode fallbacks.
 
-6. **Small-copy fast path** — the only `unsafe` block (see below).
+6. **Small-copy fast path** - the only `unsafe` block (see below).
 
 ## Round 2: removing structural overhead
 
@@ -237,15 +239,17 @@ re-reads the given-names file once per family and stores all 10^6 hashes.
 ### `finish()` is a move, not a second copy
 
 The arena stores each line followed by its `\n`, and an entry's length excludes
-the terminator. `finish()` now returns the arena itself. Previously it allocated
-a second buffer and copied every line to insert newlines, doubling output peak
-memory and costing a full pass over the data.
+the terminator. `finish()` now returns the chunk arenas directly. Previously it
+allocated a second buffer and copied every line to insert newlines, doubling
+output peak memory and costing a full pass over the data; and the old parallel
+path copied the merged output a further two times.
 
 ### Table growth does not re-hash the bytes
 
-Each entry stores a 32-bit hash tag at insert time. The low half of the hash is
-both the bucket index and the probe tag, so `grow()` is pure data movement
-(`index = tag & mask`) rather than a random-access re-read of every live line.
+Each entry stores the full 64-bit hash at insert time. Its low bits are both the
+bucket index and the probe value, so `grow()` is pure data movement
+(`index = hash & mask`) rather than a random-access re-read of every live line,
+and the merge can route entries without re-hashing them.
 
 ### Case folding happens at most once
 
@@ -256,8 +260,8 @@ templates the composition `downcase(upcase_it(x))` is computed in one pass
 that plain `downcase` would get wrong. The resolved string is already final, so
 `Emitter::emit_lower` inserts it directly instead of routing it through a `key`
 buffer and scanning it again. `emit_lower` falls back to the full path on any
-uppercase or non-ASCII byte — so unusual wordlists or literals still reproduce
-Ruby exactly — and custom `-F` templates plus the two truncating plugins keep
+uppercase or non-ASCII byte - so unusual wordlists or literals still reproduce
+Ruby exactly - and custom `-F` templates plus the two truncating plugins keep
 the original path.
 
 ### Capacity hints (measured, deliberately small)
@@ -286,7 +290,7 @@ Two further costs showed up only after the structural work was gone.
    copy/paste bug. That removes six allocations per row.
 2. With substitutions off (the default) a template whose name field is missing
    is skipped. The skip test used to run `tokenize` first, which allocated three
-   vectors for every such template — about sixteen allocations per ordinary row
+   vectors for every such template - about sixteen allocations per ordinary row
    (a row with no middle name trips the middle-name templates).
    `fmt::has_token` answers the same yes/no question with a scan; `tokenize`
    still runs when `-s on` actually needs the occurrences.
@@ -311,14 +315,165 @@ alternates the two, so load affects both):
 | `--auto` 1M people, peak RSS | 173.2 MiB | 3.3 MiB |
 | 1M substitutions | 0.45 s | 0.35 s |
 
-Peak RSS rises by a few MiB on the 100k case because each entry now carries its
-hash tag and the arena carries the line terminators — the price of never
-re-hashing on growth and never copying the output in `finish()`.
+Peak RSS rises by a few MiB on the 100k case because each entry now carries a
+64-bit hash and a chunk-packed offset, and the arena carries the line
+terminators - the price of never re-hashing on growth and never copying the
+output in `finish()` (or during the merge).
 
 These figures are from one interleaved run: hyperfine alternates the old and
 new binaries, so host load affects both. Four threads now beat one; the absolute
-times still move with the container's load (load average 3–6 on 4 cores). The
+times still move with the container's load (load average 3-6 on 4 cores). The
 larger win is the CPU reduction plus the removal of the `--auto` memory wall.
+
+## Round 3: removing the last per-candidate passes
+
+Round 2 left three smaller but measurable costs: a case-fold scan of every
+field in every template, a second copy plus guard scan for every token-free
+candidate, and a full re-hash of every line during the parallel merge.
+
+### One field scan per person, not per template
+
+`fmt::field_props` classifies the six fields once per person:
+
+* `plain`: every present byte is lowercase ASCII, so
+  `downcase(upcase_it(x)) == x` and the uppercase and lowercase compositions
+  are the same bytes;
+* `clean`: no field contains a space or apostrophe, so the post-processing
+  `delete(" ")/delete("'")` pass cannot change the candidate. Built-in
+  templates only have `.` literals, so the field check is sufficient.
+
+For plain names, `resolve` copies field slices (and the already-derived cased
+forms) directly instead of running `is_ascii` + `ascii_lowercase_in_place` per
+segment. Names with uppercase or non-ASCII bytes keep the faithful
+`upcase_then_downcase_into` path, which matters for the `ß -> SS -> ss` case.
+Input files and wordlists are normally already lowercase, so this removes two
+scans per field per template on the bulk workloads.
+
+### The resolved buffer is the candidate
+
+When a template has no substitution tokens (the common case), the resolved
+buffer *is* the final candidate. It is now stripped in place and inserted
+directly instead of being copied into `sc.tmp` and scanned again by
+`emit_lower`. A plain, clean candidate takes the guard-free
+`emit_known_lower` path; everything else falls back to the exact original
+logic. The arena copy remains (the key must outlive the next candidate), but
+the intermediate copy and two full passes over the key are gone.
+
+### The merge reuses each entry's stored hash
+
+Entries carry the full 64-bit hash that probing, growth and merging all use, so
+a merge never re-hashes a line: it only computes `hash & (p - 1)` to pick a
+bucket. `Sink::absorb` (and its second hash pass) is gone entirely - see the
+route-once merge above.
+
+### Custom-format expansion moves finished strings
+
+`expand_strict` rebuilt its vector every round and cloned every entry that no
+longer contained a token. Finished entries are now moved into the next round;
+only entries that actually split allocate. This preserves the round-based
+token-reassembly order while removing repeated `O(rounds × output)` copies for
+`-F`.
+
+### Effect
+
+Old (Round 2) vs new binary, interleaved hyperfine runs on the same busy
+4-core host:
+
+| | before | after |
+|---|---:|---:|
+| 10k rows | 95.4 ms | 77.4 ms |
+| 100k rows, 1 thread | 1.04 s | 0.79 s |
+| 100k rows, 4 threads | 1.00 s | 0.90 s |
+| 1M substitutions | 543 ms | 479 ms |
+| `--auto` 1M people | 186 ms | 161 ms |
+| custom `-F`, 10k combinations (mean) | 25.8 ms | 16.3 ms |
+
+The 100k/4-thread number is the noisiest: the host was at load average 8.5
+during that sweep, and a focused run of the new binary measured 626 ms on one
+thread, 527 ms on two and 525 ms on four. Generation is no longer the parallel
+bottleneck at this size; the final global merge is.
+
+### Compiler tuning (measured, not adopted for release)
+
+Fat LTO, `codegen-units = 1` and `panic = "abort"` were already in the release
+profile. `-C target-cpu=native` was measured separately on the 100k/1-thread
+case (656 ms -> 591 ms minimum, about 10%); it is available as `make native`,
+but `dist` keeps the baseline x86-64 target so the binary runs on older CPUs.
+PGO was not adopted: the two-stage instrumented build adds CI and release
+complexity for a gain that overlaps with native tuning, and the benchmark
+driver would have to be embedded in the release workflow.
+
+## Round 4: a merge that does not re-deduplicate
+
+Round 3 ended with a clear statement: generation is no longer the parallel
+bottleneck, the final global merge is. `Sink::absorb` re-probes every merged
+line, and the pairwise merge folds round after round across all worker arenas.
+### Route-once merge, chunked arena, 64-bit keys
+
+`engine::merge` no longer re-probes bytes. It partitions by construction:
+
+* **Phase 1** walks every worker sink once and appends a `(sink, entry)` *ref* -
+  8 bytes, no byte copy - to the bucket owning `hash & (p - 1)`. Comments
+  (`hash == 0`) go to bucket 0, where they are passed through unde-duplicated.
+* **Phase 2** de-duplicates each bucket in parallel. Because every copy of a key
+  shares a hash, all copies land in the same bucket, so no cross-bucket
+  comparison is possible and the partitions stay disjoint.
+
+The result is an `Output::Merged { sinks, refs }` that points back at the
+original arenas; `write_all` streams the surviving lines straight to stdout.
+There is no concatenation step at all, so merging is O(entries) instead of the
+old O(partitions × entries) scan, and the output is never copied.
+
+The de-duplication table and the arenas were rebuilt around this:
+
+* The probe array stores **full 64-bit hashes** (`0` = empty) alongside `u32`
+  entry indices; a false tag match is now effectively impossible, so the byte
+  comparison only runs for a genuine duplicate.
+* The arena is a list of **fixed 2^18-byte chunks**, addressed by
+  `(chunk << 18) | offset` in one `u64`. This removes the old flat-`u32` 4 GiB
+  ceiling - output can now exceed it - and `finish()` hands the chunks to
+  `write_all` without the old flattening copy.
+* Partition count is sized to the work (`entries / 4096`, capped by the thread
+  count): a two-worker merge no longer spawns sixteen threads, and a merge small
+  enough to fit one partition runs on the calling thread.
+
+The output order of the fully parallel path changes relative to the old pairwise
+merge (matched by set, not by sequence), but so did the old pairwise ordering
+relative to the serial fold - parallel output was never ordered.
+
+### Dynamic row scheduling
+
+`run_parallel` replaces the static `chunks(workers)` split with an atomic
+cursor: workers pull `people.len() / (8 · workers)` rows at a time, so a few
+expensive rows cannot strand a large static range while its neighbours idle.
+
+### Selectable key hash
+
+The de-duplication key hash moved to `src/hash.rs` and is now a build-time
+choice: `hash-fx` (default), `hash-wy` or `hash-rapid` (`--no-default-features
+--features hash-wy`). The hash drives the probe and the bucket index (the full
+64 bits are stored and compared), so swapping the hash cannot change the output.
+Building all three and interleaving them on the 100k-row case measured no
+decisive difference (minima within a few percent of each other on a host at load
+average 3-6), so the cheaper-to-compute FxHasher stays the default.
+
+### Effect
+
+Old (Round 3) vs new binary, interleaved hyperfine runs on the same busy
+4-core host (load average 3-6, so treat absolute numbers with care):
+
+| | before | after |
+|---|---:|---:|
+| 100k rows, 1 thread | 1.02 s | 0.79 s |
+| 100k rows, 4 threads | 776 ms | 537 ms (σ 143 ms; min 758 -> 407 ms) |
+| `--auto` 1M people, 4 threads | 220 ms | 228 ms (tie) |
+
+The single-thread value is unchanged (that path does not go through the
+parallel merge), which is the expected result and doubles as a sanity check.
+The tradeoff is a peak-RSS increase on the parallel row path (45.6 -> 59.5 MiB
+at 100k/4 threads): a merge no longer copies into intermediate accumulators,
+but every worker sink and every partition sink are alive at the same time.
+`--auto` memory is unchanged at 3.8 MiB.
 
 ## The single `unsafe` block
 
@@ -352,7 +507,7 @@ musl and `+crt-static` (no `musl-gcc` linker override). The result is
 x86_64 Linux kernel regardless of the installed libc.
 
 No measurable performance difference was observed between the musl static build
-and a glibc dynamic build for this workload — it is dominated by hashing,
+and a glibc dynamic build for this workload - it is dominated by hashing,
 bytes and `write(2)`, not by libc string routines. The static build is preferred
 because it removes the loader entirely and makes start-up deterministic.
 
@@ -367,9 +522,9 @@ The tool is in-memory and de-duplicates globally, as the original does.
   people**. Neither implementation can finish that in reasonable time or
   memory, and Ruby is far worse. Use `-m`, `-f`, or explicit wordlists to bound
   the work. This is a property of the original design, not of the rewrite.
-* The dedup arena uses 32-bit offsets, i.e. up to 4 GiB of unique output
-  (hundreds of millions of short lines). Beyond that the assumption is checked
-  in debug builds; the documented scope is far below it.
+* The dedup arena is chunked (2^18-byte chunks addressed by a packed 64-bit
+  offset), so unique output is no longer capped at 4 GiB. It is still fully
+  in memory, so practical limits are RAM and the 64-bit address space.
 
 ## Parallelism
 
@@ -383,7 +538,8 @@ USERNAME_ANARCHY_MIN_PARALLEL=0     # force parallel even for tiny inputs
 
 Measured on the loaded 4-core host in one interleaved run, the 100k case took
 ~0.71 s on one thread and ~0.63 s on four. On an idle machine the chunked,
-lock-free design scales further until memory bandwidth becomes the limit.
+lock-free design scales further until memory bandwidth becomes the limit (the
+merge itself is now a single routing pass plus a parallel per-partition dedup).
 Ordering is not part of the output contract; the merged content (the line set)
 is deterministic regardless of worker count.
 
