@@ -16,7 +16,7 @@ jobs:
     name: Tests and static build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Rust (stable, musl target)
         uses: dtolnay/rust-toolchain@stable
