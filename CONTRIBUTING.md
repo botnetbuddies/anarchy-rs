@@ -1,73 +1,61 @@
 # Contributing
 
-Thanks for taking a look. This project has one non-negotiable rule:
+Preserve the original flags and generated usernames. Add a regression case for
+behavior changes and document intentional differences in
+[COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
-> **Behavioural parity with the original Ruby tool comes before speed.** If a
-> change alters the *set* of output lines for any invocation, it is a bug - even
-> if the original's behaviour looks wrong.
+## Source layout
 
-## Ground rules
+`src/main.rs` starts the CLI. Each runtime module has one responsibility:
 
-* Preserve the quirks documented in [`COMPATIBILITY.md`](COMPATIBILITY.md#preserved-quirks). They are
-  part of the output contract.
-* Keep the program safe Rust. `unsafe` is allowed only in an isolated,
-  profiler-justified hot spot with a written safety argument (there is currently
-  exactly one: `util::push_bytes`).
-* Do not bake wordlists into the binary. Datasets stay file-path driven.
-* Keep the release profile (`opt-level = 3`, LTO, `codegen-units = 1`).
+- `cli/`: argument parsing, help, input setup and recognition.
+- `names/`: name records, file parsing and dictionary storage.
+- `fmt/`: template compilation, resolution and substitution expansion.
+- `engine/`: candidate generation, work estimates and ordered worker scheduling.
+- `output/`: deduplication, output buffers and verbose formatting.
+- `util/`: byte copying, casing and field splitting.
 
-## Workflow
+Tests live beside their modules. Keep new code with the responsibility it serves;
+avoid adding unrelated behavior to the CLI entry point or generation loop.
+
+## Checks
 
 ```sh
-cargo fmt
-cargo clippy --all-targets --release -- -D warnings
-cargo test
-cargo build --release
-python3 tests/parity/run_parity.py --selftest
-python3 tests/parity/run_parity.py
+make check
+make test
+USERNAME_ANARCHY_THREADS=4 USERNAME_ANARCHY_MIN_PARALLEL=0 make test
 ```
 
-The parity gate must be green. It runs the original Ruby script and the Rust
-binary over 451 cases and compares output sets; see `tests/parity/run_parity.py`
-for how the oracle is chosen (stock Ruby where it works, otherwise the
-pre-3.2 `Object#=~` shim).
+`make check` runs formatting, Clippy, documentation checks, Rust and Python
+unit tests, and the parity harness self-test. `make test` builds a fresh release binary and runs 451 cases
+against the Ruby oracle. The harness uses stock Ruby where it succeeds and the
+Ruby 3.2 compatibility shim otherwise; see `tests/parity/oracle_compat.rb`.
 
-## Adding a parity case
+Add cases to `tests/parity/run_parity.py`. The comparison kinds are `names`
+(output sets), `listfmt` (exact listing), `recognise` (stable object rendering),
+`usage` (successful help) and `error` (non-zero exit).
 
-Add a `(kind, args)` entry to the case list in `tests/parity/run_parity.py`.
-Kinds are `names` (compare output sets), `usage` (expect exit 0 and usage text),
-`listfmt` (compare format listing), `recognise` (masked `Plugin` objects), and
-`error` (expect a non-zero exit). Run `--selftest` afterwards to confirm the
-harness still detects a deliberately broken candidate.
+Use safe Rust. The small-copy helper in `src/util/bytes.rs` is the only unsafe
+block; it has a written safety argument and profiling evidence. Keep wordlists
+external and preserve the portable release profile: optimization level 3, LTO
+and one codegen unit.
 
 ## Benchmarks
 
 ```sh
 make bench
-python3 bench/run_bench.py --threads 1   # apples-to-apples single core
+python3 bench/run_bench.py --filter tiny
+python3 bench/run_bench.py --threads 1
 ```
 
-Record meaningful changes in `PERFORMANCE.md`, with the workload, build settings
-and measurements that justify them.
+Record the input, build settings and before/after measurements in
+[PERFORMANCE.md](docs/PERFORMANCE.md). Benchmark timing includes process startup,
+input parsing, generation and output writes. Memory is reported when the
+installed Hyperfine version provides it.
 
-CI (`.github/workflows/ci.yml`) runs on every push and pull request: formatting,
-clippy, unit tests, a static-musl build, the static-linking assertions, a smoke
-test, and the full parity gate.
+## Releases
 
-## Releasing
-
-Releases are tag-driven:
-
-```sh
-git tag v0.6.0
-git push origin v0.6.0
-```
-
-`.github/workflows/release.yml` then builds the static binary, verifies it has no
-`PT_INTERP`, packages `username-anarchy-<version>-x86_64-unknown-linux-musl.tar.gz`
-(binary + `names/` + docs), writes `SHA256SUMS`, and publishes a GitHub Release
-with generated notes. The `GITHUB_TOKEN` needs `contents: write` (already set in
-the workflow).
-
-The archive is self-contained: `tar xzf … && cd username-anarchy-* && ./username-anarchy anna key`
-works because the binary finds `names/` next to itself.
+CI runs the checks, builds the static musl binary and verifies static linking.
+A `v*` tag triggers `.github/workflows/release.yml`, which packages the binary,
+wordlists, README, documentation and license into a release archive. The binary
+finds its bundled `names/` directory beside the executable.

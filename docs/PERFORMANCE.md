@@ -106,6 +106,11 @@ case folding, sequential `%%` formatting and verbose format listings; those are
 fixed and covered by the Rust harness now. Unit tests check recipe equivalence
 with the general engine and every byte position across short-key boundaries.
 
+The later module cleanup retained the same output hash. Its 500-run Hyperfine
+check measured 15.2 ± 4.4 ms before and 15.8 ± 4.6 ms after. A second check with
+200 interleaved runs per version measured means of 15.6 and 15.4 ms respectively;
+the timing difference was not consistent across the two measurement orders.
+
 ## Reproducing a measurement
 
 Build both versions with the same Rust toolchain and release profile. Save the
@@ -140,5 +145,5 @@ Use format selection, substitution limits or smaller dictionaries to control
 the workload. Individual candidates are limited to a 32-bit byte length;
 aggregate output offsets are 64-bit.
 
-The only `unsafe` code is the small-copy helper in `src/util.rs`. Its safety
+The only `unsafe` code is the small-copy helper in `src/util/bytes.rs`. Its safety
 argument is written beside the implementation.

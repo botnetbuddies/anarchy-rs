@@ -1,7 +1,7 @@
 //! Selectable 64-bit hash for candidate keys.
 //!
 //! Only the low 32 bits matter to the de-duplicator: they are both the bucket
-//! index (`tag & mask`) and the probe tag, and each [`crate::engine::FinalSink`]
+//! index (`tag & mask`) and the probe tag, and each [`crate::output::FinalSink`]
 //! entry stores them. That makes the hash a pure per-candidate cost, with no
 //! effect on output, so it is worth choosing empirically.
 //!

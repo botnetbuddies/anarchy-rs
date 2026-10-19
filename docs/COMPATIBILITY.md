@@ -33,7 +33,7 @@ Documented rather than hidden:
 
 * **Exit codes.** Error paths exit non-zero. Stock Ruby often exits 0 because
   its `error()` helper calls bare `exit`, and its `OptionParser` rescue path
-  prints usage and exits 0. The task specification requires non-zero for errors.
+  prints usage and exits 0. This port exits non-zero so scripts can detect failures.
 * **Usage/banner text** is not byte-identical (the original picks a random ANSI
   colour for the banner). Option names, defaults and examples are preserved.
 * **OptionParser edge cases**: ambiguous abbreviations, needless `=value` and
@@ -47,3 +47,12 @@ Documented rather than hidden:
 * **Output ordering.** The compatibility gate compares sets of lines. Within
   the Rust port, numbered batches preserve serial generation order, including
   `-v` comments, when running on multiple cores.
+
+## Ruby oracle
+
+Tests use the unmodified Ruby source in `vendor/username-anarchy/`. They run
+both stock Ruby and the shim in `tests/parity/oracle_compat.rb`. Ruby 3.2 removed
+`Object#=~`, which the original calls on arrays during substitution; the shim
+restores that method. Stock Ruby is the oracle when it succeeds, and the shim
+is used when stock Ruby crashes. The harness checks that both agree wherever
+stock Ruby succeeds.

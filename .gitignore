@@ -6,11 +6,15 @@
 # Generated benchmark inputs and raw results
 /bench/data/
 /bench/results.log
-/bench/.hf.json
 
 # Python
 __pycache__/
 *.py[cod]
 
-# Raw benchmark JSON (the Markdown table is committed)
+# Raw benchmark results
 /bench/results.json
+
+# Release packaging output
+/username-anarchy-*.tar.gz
+/username-anarchy-*-x86_64-unknown-linux-musl/
+/SHA256SUMS

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Split the CLI, generation, format, name and output code into focused modules.
+- Group supporting documentation under `docs/` and upstream Ruby under `vendor/`.
+- Share build logic through the Makefile and support Hyperfine 1.x and 2.x in
+  the benchmark helper.
+
 - Compile ordinary ASCII formats into short copy recipes and skip equivalent
   recipes after selection, while retaining verbose format comments.
 - Size the default worker count to the estimated job and inline exact short-key
@@ -19,7 +24,7 @@
   Cartesian product.
 - Use the `anarchy-rs` banner, remove the top-level `names` symlink and find
   vendored datasets directly from a source checkout.
-- Rewrite the README and move compatibility notes into `COMPATIBILITY.md`.
+- Rewrite the README and move compatibility notes into `docs/COMPATIBILITY.md`.
 
 ## 0.6.0
 

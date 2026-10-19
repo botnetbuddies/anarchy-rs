@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 0 parity gate: Rust rewrite vs. the original Ruby oracle.
+"""Parity tests: Rust rewrite vs. the original Ruby oracle.
 
 Runs the same invocation through three programs and compares stdout:
 
@@ -15,8 +15,8 @@ Rules
   compat oracle produces the same set (proving the shim is faithful).
 * If stock Ruby crashes (non-zero exit), the compat oracle is used instead.
 * If both oracles crash, the Rust binary must also fail (non-zero exit).
-* Only the *set* of output lines is compared, matching the task's stated
-  non-goal that output ordering need not match.
+* Output sets are compared for generation; format listings are compared
+  byte for byte. Serial/parallel ordering is checked by Rust unit tests.
 
 Usage:
     python3 tests/parity/run_parity.py            # run everything
@@ -34,7 +34,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
-RUBY_DIR = REPO / "username-anarchy"
+RUBY_DIR = REPO / "vendor" / "username-anarchy"
 RUBY_SCRIPT = RUBY_DIR / "username-anarchy"
 COMPAT = HERE / "oracle_compat.rb"
 FIX = HERE / "fixtures"

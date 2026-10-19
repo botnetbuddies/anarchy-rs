@@ -46,8 +46,9 @@ jobs:
           mkdir -p "$ARCHIVE"
           strip --strip-all -o "$ARCHIVE/username-anarchy" \
             "target/$TARGET/release/username-anarchy-rs"
-          cp -r username-anarchy/names "$ARCHIVE/names"
-          cp README.md PERFORMANCE.md COMPATIBILITY.md LICENSE THIRD_PARTY.md "$ARCHIVE/"
+          cp -r vendor/username-anarchy/names "$ARCHIVE/names"
+          cp README.md LICENSE "$ARCHIVE/"
+          cp -r docs "$ARCHIVE/docs"
           tar --sort=name --owner=0 --group=0 --numeric-owner \
               -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
           sha256sum "$ARCHIVE.tar.gz" > SHA256SUMS

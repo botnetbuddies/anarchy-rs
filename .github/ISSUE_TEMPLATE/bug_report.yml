@@ -25,7 +25,7 @@ body:
     id: expected
     attributes:
       label: Expected output (Ruby)
-      description: Output of `ruby username-anarchy/username-anarchy ...`. If Ruby 3.2+ crashes on substitution, prefix with `-r tests/parity/oracle_compat.rb`.
+      description: Output of `ruby vendor/username-anarchy/username-anarchy ...`. If Ruby 3.2+ crashes on substitution, prefix with `-r ./tests/parity/oracle_compat.rb`.
       render: text
   - type: textarea
     id: actual

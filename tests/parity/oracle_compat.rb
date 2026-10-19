@@ -7,7 +7,7 @@
 #
 # Defining it back reproduces the semantics the tool was written against
 # (Ruby <= 3.1) and is used only as the parity oracle for substitution cases.
-# See PERFORMANCE.md ("Oracle & Ruby version") for the full rationale.
+# See docs/COMPATIBILITY.md ("Ruby oracle") for the test setup.
 class Object
   def =~(other)
     nil

@@ -26,17 +26,11 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+      - name: Formatting, lint, documentation and unit tests
+        run: make check
 
-      - name: Clippy
-        run: cargo clippy --all-targets --release -- -D warnings
-
-      - name: Unit tests
-        run: cargo test --locked
-
-      - name: Build release binary
-        run: cargo build --release --locked
+      - name: Build release bundle
+        run: make dist
 
       - name: Verify the binary is fully static
         run: |
@@ -63,15 +57,18 @@ jobs:
           "$BIN" anna key | grep -qx anna
           "$BIN" --country france -a | grep -qx michel
           "$BIN" --list-formats | grep -q firstlast
-          "$BIN" -s on --given-names username-anarchy/names/facebook/firstnames-top100.txt \
-                        --family-names username-anarchy/names/facebook/lastnames-top100.txt \
+          "$BIN" -s on --given-names vendor/username-anarchy/names/facebook/firstnames-top100.txt \
+                        --family-names vendor/username-anarchy/names/facebook/lastnames-top100.txt \
                         -f firstlast "" | head -1 | grep -q .
 
-      - name: Harness self-test
-        run: python3 tests/parity/run_parity.py --selftest
-
       - name: Parity gate against the Ruby oracle
-        run: python3 tests/parity/run_parity.py
+        run: make test
+
+      - name: Forced-parallel parity gate
+        run: make test
+        env:
+          USERNAME_ANARCHY_THREADS: "4"
+          USERNAME_ANARCHY_MIN_PARALLEL: "0"
 
       - name: Upload the static binary
         uses: actions/upload-artifact@v4

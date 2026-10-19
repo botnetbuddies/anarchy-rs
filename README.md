@@ -59,7 +59,7 @@ to see examples of the built-in formats.
 
 The program finds wordlists through `USERNAME_ANARCHY_ROOT`, beside the
 executable, or in the working directory. In a source checkout it also uses
-`username-anarchy/names/` directly. `--given-names` and `--family-names` accept
+`vendor/username-anarchy/names/` directly. `--given-names` and `--family-names` accept
 your own dictionary files.
 
 ## Performance
@@ -71,18 +71,18 @@ the merger does not hash their bytes again.
 
 `USERNAME_ANARCHY_THREADS` sets the worker count. Set it to `1` to force serial
 execution. Performance depends on the input and available CPUs; measurements
-and the benchmark command are in [PERFORMANCE.md](PERFORMANCE.md).
+and the benchmark command are in [PERFORMANCE.md](docs/PERFORMANCE.md).
 
 ## Check changes
 
 ```sh
-make check   # formatting, clippy, unit tests and harness self-test
+make check   # formatting, linting, documentation and tests
 make test    # compare against the Ruby original
 ```
 
 The parity tests compare output sets, including substitutions, Unicode names,
 country dictionaries and error cases. Some original quirks affect those outputs;
-[COMPATIBILITY.md](COMPATIBILITY.md) documents them. The Ruby source and datasets
-are kept in `username-anarchy/` for testing and distribution.
+[COMPATIBILITY.md](docs/COMPATIBILITY.md) documents them. The Ruby source and datasets
+are kept in `vendor/username-anarchy/` for testing and distribution.
 
-MIT licensed. See [THIRD_PARTY.md](THIRD_PARTY.md) for attribution.
+MIT licensed. See [THIRD_PARTY.md](docs/THIRD_PARTY.md) for attribution.
