@@ -63,7 +63,12 @@ STATIC_PLUGINS = [
 
 def run(cmd, cwd, extra_env=None):
     env = dict(os.environ)
-    env["LC_ALL"] = "C"
+    # Match the encoding the tool is normally run under. With LC_ALL=C, Ruby
+    # treats ARGV as ASCII-8BIT and character-based slicing (`s[0..0]`)
+    # silently becomes byte-based, producing mangled non-ASCII output; the
+    # Rust port operates on UTF-8 characters, which is Ruby's behaviour in any
+    # UTF-8 locale.
+    env["LC_ALL"] = "C.UTF-8"
     if extra_env:
         env.update(extra_env)
     p = subprocess.run(cmd, cwd=str(cwd), env=env,
@@ -228,6 +233,14 @@ def build_cases():
                      "-f", "first.last", "-s", "on", "-m", "2"]),
           ("names", ["-a", "--given-names", G, "--family-names", F, "-v",
                      "-f", "firstlast"]),
+          # `None` entries (the original's `strip!`-returns-nil quirk) and
+          # verbose output on the streamed cross-product.
+          ("names", ["-a", "--given-names", GNONL, "--family-names", F,
+                     "-f", "firstlast", "-s", "on"]),
+          ("names", ["-a", "--given-names", GNONL, "--family-names", F,
+                     "-f", "FLast", "-s", "on"]),
+          ("names", ["-a", "--given-names", G, "--family-names", F,
+                     "-f", "FLast", "-s", "on", "-v"]),
           ]
 
     # --- list-formats ----------------------------------------------------
@@ -385,6 +398,35 @@ def build_cases():
                      "-m", "010", "-f", "firstlast", ""]),
           ("names", ["-s", "on", "--given-names", FBG, "--family-names", FBF,
                      "-m", "1_0", "-f", "firstlast", ""]),
+          ]
+
+    # --- case folding and the streamed --auto path -----------------------
+    # Uppercase templates run through upcase_it; with -C true the original
+    # downcases the candidate before printing. The resolved-lower fast path
+    # must produce the same bytes, including when fields are missing (the
+    # sentinel) and when a suffix is appended.
+    for fmt in ["FLast", "FL", "FirstLast", "First.Last", "Last"]:
+        C.append(("names", ["-a", "--given-names", G, "--family-names", F,
+                            "-f", fmt, "-s", "on"]))
+    C += [("names", ["Anna", "Key"]),
+          ("names", ["-C", "false", "Anna", "Key"]),
+          ("names", ["-C", "false", "-f", "FLast", "Anna", "Key"]),
+          ("names", ["-C", "false", "-f", "firstlast", "Anna", "Key"]),
+          ("names", ["-C", "false", "-f", "FirstLast", "Anna", "Key"]),
+          ("names", ["-C", "false", "-a", "--given-names", G, "--family-names", F]),
+          ("names", ["-C", "false", "-a", "--given-names", G, "--family-names", F,
+                     "-f", "FLast", "-s", "on"]),
+          ("names", ["-C", "false", "-@", "@EXAMPLE.COM", "-f", "FLast", "Anna", "Key"]),
+          ("names", ["-@", "@EXAMPLE.COM", "-f", "FLast", "Anna", "Key"]),
+          ("names", ["-@", "@example.com", "-f", "First.Last", "Anna", "Key"]),
+          # Non-ASCII: the composed upcase->downcase is not plain downcase
+          # (ß -> SS -> ss), so both paths must match Ruby exactly.
+          ("names", ["-f", "FLast", "ß", "Key"]),
+          ("names", ["-f", "FirstLast", "ß", "Key"]),
+          ("names", ["-f", "First.Last", "Élodie", "Key"]),
+          ("names", ["-C", "false", "-f", "FLast", "ß", "Key"]),
+          ("names", ["-C", "false", "-f", "First.Last", "Élodie", "Key"]),
+          ("names", ["-f", "firstlast[8]", "ß", "Key"]),
           ]
 
     # --- usage / error paths --------------------------------------------

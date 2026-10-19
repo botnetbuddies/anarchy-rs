@@ -20,6 +20,7 @@ build:
 check:
 	cargo fmt --all -- --check
 	cargo clippy --all-targets --release -- -D warnings
+	cargo test
 	$(MAKE) selftest
 
 dist: build

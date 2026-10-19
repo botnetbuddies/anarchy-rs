@@ -21,13 +21,14 @@ Thanks for taking a look. This project has one non-negotiable rule:
 ```sh
 cargo fmt
 cargo clippy --all-targets --release -- -D warnings
+cargo test
 cargo build --release
 python3 tests/parity/run_parity.py --selftest
 python3 tests/parity/run_parity.py
 ```
 
 The parity gate must be green. It runs the original Ruby script and the Rust
-binary over 411 cases and compares output sets; see `tests/parity/run_parity.py`
+binary over 435 cases and compares output sets; see `tests/parity/run_parity.py`
 for how the oracle is chosen (stock Ruby where it works, otherwise the
 pre-3.2 `Object#=~` shim).
 
@@ -62,8 +63,8 @@ git push -u origin main
 Afterwards, replace `OWNER/REPO` in the badge URLs at the top of `README.md`.
 
 CI (`.github/workflows/ci.yml`) runs on every push and pull request: formatting,
-clippy, a static-musl build, the static-linking assertions, a smoke test, and the
-full 411-case parity gate.
+clippy, unit tests, a static-musl build, the static-linking assertions, a smoke
+test, and the full 435-case parity gate.
 
 ## Releasing
 

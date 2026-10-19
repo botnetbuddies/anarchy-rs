@@ -21,7 +21,7 @@ Notes
 Usage
 -----
     python3 bench/run_bench.py                # everything (a few minutes)
-    python3 bench/run_bench.py --quick        # skip the 100k Ruby run
+    python3 bench/run_bench.py --quick        # skip the 100k and --auto cases
     python3 bench/run_bench.py --threads 1
     python3 bench/run_bench.py --json out.json
 """
@@ -97,7 +97,7 @@ def fmt_s(seconds: float) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--quick", action="store_true", help="skip the slow 100k Ruby case")
+    ap.add_argument("--quick", action="store_true", help="skip the slow 100k/auto cases")
     ap.add_argument("--threads", type=int, default=None, help="Rust worker threads")
     ap.add_argument("--json", type=Path, help="also write raw results as JSON")
     args = ap.parse_args()
@@ -124,6 +124,12 @@ def main() -> int:
         ("tiny invocation (`anna key`)", "anna key", "anna key", False, 20, 3),
         ("10k-row input file", f"-i {n10}", f"-i {n10}", False, 5, 1),
         ("100k-row input file", f"-i {n100}", f"-i {n100}", False, 2, 0),
+        # Streamed in Rust; the original materializes all 10^6 people (and
+        # re-reads the given-names file once per family).
+        ("auto cross-product (1M people)",
+         f"-a --given-names {g1k} --family-names {f1k} -f first -m 1",
+         f"-a --given-names {g1k} --family-names {f1k} -f first -m 1",
+         False, 2, 0),
         ("1M substitutions (full output)",
          f"-s on --given-names {g1k} --family-names {f1k} -f firstlast ''",
          f"-s on --given-names {g1k} --family-names {f1k} -f firstlast ''",
@@ -138,7 +144,7 @@ def main() -> int:
          True, 5, 1),
     ]
     if args.quick:
-        cases = [c for c in cases if "100k" not in c[0]]
+        cases = [c for c in cases if "100k" not in c[0] and "cross-product" not in c[0]]
 
     rows = []
     raw = []

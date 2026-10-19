@@ -247,6 +247,40 @@ pub fn upcase_it_into(s: &[u8], out: &mut Vec<u8>) -> bool {
     true
 }
 
+/// Ruby `upcase_it(s)` followed by `String#downcase`, i.e.
+/// `downcase(s[0..0].upcase + s[1..-1].downcase)`.
+///
+/// This is the composition the original applies to every `%F`/`%L` segment
+/// when `--case-insensitive` is on: the segment is upcased during template
+/// substitution and the whole candidate is downcased just before printing.
+/// Computing it in one pass yields the same bytes (including the `ß -> SS ->
+/// ss` expansion, which plain `downcase` would not) while avoiding a second
+/// full scan and a temporary buffer.
+///
+/// Returns `false` when Ruby's `upcase_it` would have returned `nil` (empty
+/// input).
+pub fn upcase_then_downcase_into(s: &[u8], out: &mut Vec<u8>) -> bool {
+    if s.is_empty() {
+        return false;
+    }
+    if is_ascii(s) {
+        let start = out.len();
+        push_bytes(out, s);
+        ascii_lowercase_in_place(&mut out[start..]);
+        return true;
+    }
+    let text = String::from_utf8_lossy(s);
+    let end = nth_char_boundary(text.as_bytes(), 1);
+    let first = &text[..end];
+    let rest = &text[end..];
+    // `downcase(upcase(first))` — not always `downcase(first)` (e.g. ß -> ss).
+    let first_up = first.to_uppercase();
+    out.extend_from_slice(first_up.to_lowercase().as_bytes());
+    // `downcase(downcase(rest)) == downcase(rest)`.
+    out.extend_from_slice(rest.to_lowercase().as_bytes());
+    true
+}
+
 /// Byte index just past the `n`-th character (Ruby `String#[]` range semantics).
 pub fn nth_char_boundary(s: &[u8], n: usize) -> usize {
     if is_ascii(s) {

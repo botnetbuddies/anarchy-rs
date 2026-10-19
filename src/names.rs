@@ -21,6 +21,142 @@ pub struct Name {
     pub middleinitial: Option<Vec<u8>>,
 }
 
+/// Read-only view over the six fields, implemented by both the owned [`Name`]
+/// and the allocation-free [`NameRef`].
+pub trait NameFields {
+    fn firstname(&self) -> Option<&[u8]>;
+    fn lastname(&self) -> Option<&[u8]>;
+    fn middlename(&self) -> Option<&[u8]>;
+    fn firstinitial(&self) -> Option<&[u8]>;
+    fn lastinitial(&self) -> Option<&[u8]>;
+    fn middleinitial(&self) -> Option<&[u8]>;
+}
+
+impl NameFields for Name {
+    #[inline]
+    fn firstname(&self) -> Option<&[u8]> {
+        self.firstname.as_deref()
+    }
+    #[inline]
+    fn lastname(&self) -> Option<&[u8]> {
+        self.lastname.as_deref()
+    }
+    #[inline]
+    fn middlename(&self) -> Option<&[u8]> {
+        self.middlename.as_deref()
+    }
+    #[inline]
+    fn firstinitial(&self) -> Option<&[u8]> {
+        self.firstinitial.as_deref()
+    }
+    #[inline]
+    fn lastinitial(&self) -> Option<&[u8]> {
+        self.lastinitial.as_deref()
+    }
+    #[inline]
+    fn middleinitial(&self) -> Option<&[u8]> {
+        self.middleinitial.as_deref()
+    }
+}
+
+/// Borrowed equivalent of [`Name`], used by the `--auto` cross-product so that
+/// no `Person` or per-field `Vec` is allocated per generated person.
+#[derive(Clone, Copy, Default)]
+pub struct NameRef<'a> {
+    pub firstname: Option<&'a [u8]>,
+    pub lastname: Option<&'a [u8]>,
+    pub middlename: Option<&'a [u8]>,
+    pub firstinitial: Option<&'a [u8]>,
+    pub lastinitial: Option<&'a [u8]>,
+    pub middleinitial: Option<&'a [u8]>,
+}
+
+impl<'a> NameRef<'a> {
+    /// Mirror `Name::init` for a person whose only populated columns are
+    /// `firstname` and `lastname` (the `--auto` shape): empty values become
+    /// `None`, and both initials are the first character of the respective
+    /// field.
+    #[inline]
+    pub fn from_first_last(first: Option<&'a [u8]>, last: Option<&'a [u8]>) -> NameRef<'a> {
+        let first = first.filter(|s| !s.is_empty());
+        let last = last.filter(|s| !s.is_empty());
+        NameRef {
+            firstname: first,
+            lastname: last,
+            firstinitial: first.map(first_char_slice),
+            lastinitial: last.map(first_char_slice),
+            ..NameRef::default()
+        }
+    }
+
+    /// Borrowing equivalent of [`Name::init`], including the original's
+    /// independent-initial columns and its `@middleinitial = s[:firstinitial]`
+    /// / `@lastinitial = s[:firstinitial]` copy/paste bug.
+    ///
+    /// The hot input-file path uses this to avoid six `Vec` clones per row.
+    #[inline]
+    pub fn from_person(p: &'a Person) -> NameRef<'a> {
+        let nz = |v: &'a Option<Vec<u8>>| v.as_deref().filter(|s| !s.is_empty());
+        let firstname = nz(&p[FIRSTNAME]);
+        let middlename = nz(&p[MIDDLENAME]);
+        let lastname = nz(&p[LASTNAME]);
+        let firstinitial_col = nz(&p[FIRSTINITIAL]);
+        let firstinitial = firstinitial_col.or_else(|| firstname.map(first_char_slice));
+        // `init` derives these from the name, then overwrites them with the
+        // *first-initial column* when the respective column is present.
+        let middleinitial = if nz(&p[MIDDLEINITIAL]).is_some() {
+            firstinitial_col
+        } else {
+            middlename.map(first_char_slice)
+        };
+        let lastinitial = if nz(&p[LASTINITIAL]).is_some() {
+            firstinitial_col
+        } else {
+            lastname.map(first_char_slice)
+        };
+        NameRef {
+            firstname,
+            lastname,
+            middlename,
+            firstinitial,
+            middleinitial,
+            lastinitial,
+        }
+    }
+}
+
+#[inline]
+fn first_char_slice(s: &[u8]) -> &[u8] {
+    &s[..util::nth_char_boundary(s, 1)]
+}
+
+impl NameFields for NameRef<'_> {
+    #[inline]
+    fn firstname(&self) -> Option<&[u8]> {
+        self.firstname
+    }
+    #[inline]
+    fn lastname(&self) -> Option<&[u8]> {
+        self.lastname
+    }
+    #[inline]
+    fn middlename(&self) -> Option<&[u8]> {
+        self.middlename
+    }
+    #[inline]
+    fn firstinitial(&self) -> Option<&[u8]> {
+        self.firstinitial
+    }
+    #[inline]
+    fn lastinitial(&self) -> Option<&[u8]> {
+        self.lastinitial
+    }
+    #[inline]
+    fn middleinitial(&self) -> Option<&[u8]> {
+        self.middleinitial
+    }
+}
+
 /// A parsed input row: the raw column values *before* `Name#init`.
 ///
 /// `None` means the field was absent or the empty string (the original maps
@@ -217,16 +353,36 @@ pub fn load_names_list(data: &[u8]) -> Result<LoadedNames, String> {
 }
 
 /// A wordlist loaded the way the original loads it (`readlines` then `strip!`).
+///
+/// Items live in one contiguous buffer with `(offset, len)` ranges, the same
+/// trick the output sink uses. This removes one allocation per word (tens of
+/// thousands for the Facebook dictionaries) and keeps enumeration scans
+/// cache-friendly.
 pub struct WordList {
-    pub items: Vec<Vec<u8>>,
+    bytes: Vec<u8>,
+    ranges: Vec<(u32, u32)>,
     /// True when the final line had no trailing newline *and* nothing to strip,
     /// so Ruby's `strip!` would have returned `nil` and the original would raise
     /// when the list is used. We surface that as an error at use time.
     pub last_nil: bool,
 }
 
+impl WordList {
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.ranges.len()
+    }
+
+    #[inline]
+    pub fn get(&self, i: usize) -> &[u8] {
+        let (a, b) = self.ranges[i];
+        &self.bytes[a as usize..b as usize]
+    }
+}
+
 pub fn load_wordlist(data: &[u8]) -> WordList {
-    let mut items = Vec::new();
+    let mut bytes: Vec<u8> = Vec::with_capacity(data.len());
+    let mut ranges: Vec<(u32, u32)> = Vec::new();
     let mut last_nil = false;
     let lines = readlines(data);
     let n = lines.len();
@@ -236,31 +392,87 @@ pub fn load_wordlist(data: &[u8]) -> WordList {
             // Ruby `String#strip!` returns nil here.
             last_nil = true;
         } else {
-            items.push(stripped.to_vec());
+            let start = bytes.len();
+            bytes.extend_from_slice(stripped);
+            ranges.push((start as u32, bytes.len() as u32));
         }
     }
-    WordList { items, last_nil }
+    WordList {
+        bytes,
+        ranges,
+        last_nil,
+    }
 }
 
 /// `given_name_list`: `readlines.map { |x| x.downcase!; x.strip! }`.
 pub fn load_given_list(data: &[u8]) -> WordList {
     let raw = load_wordlist(data);
+    let mut bytes: Vec<u8> = Vec::with_capacity(raw.bytes.len());
+    let mut ranges: Vec<(u32, u32)> = Vec::with_capacity(raw.ranges.len());
+    for i in 0..raw.len() {
+        let start = bytes.len();
+        util::downcase_into(raw.get(i), &mut bytes);
+        ranges.push((start as u32, bytes.len() as u32));
+    }
     WordList {
-        items: raw
-            .items
-            .into_iter()
-            .map(|x| util::downcase(&strip_inline(&x)))
-            .collect(),
+        bytes,
+        ranges,
         last_nil: raw.last_nil,
     }
-}
-
-fn strip_inline(x: &[u8]) -> Vec<u8> {
-    util::strip(x).to_vec()
 }
 
 /// `family_name_list`: identical to `given_name_list`.
 #[allow(dead_code)]
 pub fn load_family_list(data: &[u8]) -> WordList {
     load_given_list(data)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn person(cols: [&str; 6]) -> Person {
+        cols.map(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                Some(s.as_bytes().to_vec())
+            }
+        })
+    }
+
+    /// `NameRef::from_person` must be indistinguishable from `Name::init`,
+    /// including the original's `middleinitial`/`lastinitial` copy/paste bug.
+    #[test]
+    fn from_person_matches_init() {
+        let cases = [
+            ["anna", "key", "", "", "", ""],
+            ["anna", "key", "", "", "boom", ""],
+            ["Anna", "Key", "A", "K", "Boom", "M"],
+            ["anna", "key", "", "K", "", ""],
+            ["anna", "key", "", "", "", "M"],
+            ["", "", "", "", "", ""],
+            ["é", "key", "", "", "", ""],
+            ["anna", "key", "É", "", "", ""],
+        ];
+        for c in cases {
+            let p = person(c);
+            let owned = Name::init(&p);
+            let borrowed = NameRef::from_person(&p);
+            assert_eq!(owned.firstname.as_deref(), borrowed.firstname, "{c:?}");
+            assert_eq!(owned.lastname.as_deref(), borrowed.lastname, "{c:?}");
+            assert_eq!(owned.middlename.as_deref(), borrowed.middlename, "{c:?}");
+            assert_eq!(
+                owned.firstinitial.as_deref(),
+                borrowed.firstinitial,
+                "{c:?}"
+            );
+            assert_eq!(owned.lastinitial.as_deref(), borrowed.lastinitial, "{c:?}");
+            assert_eq!(
+                owned.middleinitial.as_deref(),
+                borrowed.middleinitial,
+                "{c:?}"
+            );
+        }
+    }
 }

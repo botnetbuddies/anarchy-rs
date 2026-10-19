@@ -15,14 +15,17 @@ output. See [Preserved quirks](#preserved-quirks).
 
 | | Rust | Ruby 3.4 |
 |---|---|---|
-| tiny invocation (`anna key`) | **0.8 ms** | 174 ms |
-| 10k-row input file | **133 ms** | 14.4 s |
-| 100k-row input file | **2.6 s** | 142 s |
-| 1M substitutions (full) | **0.43 s** | 11.5 s |
-| 1M substitutions, `-m 5` | **2.2 ms** | 7.2 s |
+| tiny invocation (`anna key`) | **0.90 ms** | 161 ms |
+| 10k-row input file | **72 ms** | 12.4 s |
+| 100k-row input file | **0.52 s** | 142 s |
+| `--auto` cross-product (1M people) | **101 ms** | 43.1 s |
+| 1M substitutions (full) | **0.28 s** | 10.2 s |
+| 1M substitutions, `-m 5` | **1.6 ms** | 7.5 s |
 
 Full numbers, methodology and profiling notes: [`PERFORMANCE.md`](PERFORMANCE.md).
-Reproduce with `make bench`.
+Reproduce with `make bench`. The `--auto` row is the 1,000 × 1,000 Facebook
+lists (`-f first -m 1`): Rust streams the cross-product instead of materialising
+it, so its peak memory stays at a few MiB.
 
 ## Build
 
@@ -73,7 +76,7 @@ work as before and take priority.
 ## Tests
 
 ```sh
-make test        # full parity gate (411 cases)
+make test        # full parity gate (435 cases)
 make selftest    # verifies the harness itself
 ```
 
@@ -93,9 +96,15 @@ otherwise the shim, and it cross-checks the two where both succeed.
 
 Coverage includes all 24 format plugins, every valid `--country`, invalid
 countries, CRLF/no-trailing-newline/odd-whitespace/blank-line input files,
-expansion ordering, `-m`, suffixes, case folding, `-a`/`--auto`, `--recognise`,
-`--list-formats`, long-option abbreviations, custom `-F` formats (including the
-token-reassembly quirk), error paths, and 90 seeded fuzz cases.
+expansion ordering, `-m`, suffixes, case folding (`-C true`/`false`), non-ASCII
+names, `-a`/`--auto`, `--recognise`, `--list-formats`, long-option
+abbreviations, custom `-F` formats (including the token-reassembly quirk), error
+paths, and 90 seeded fuzz cases.
+
+The oracle runs under `LC_ALL=C.UTF-8`. Ruby's `String#[]` is byte-based under
+the C locale (so `"ß"[0..0]` returns the first *byte* of the UTF-8 encoding) and
+character-based under any UTF-8 locale; the port implements the character
+semantics a normal UTF-8 environment produces.
 
 ## Preserved quirks
 
@@ -150,7 +159,7 @@ src/names.rs     Name/Person, input-file parsing, wordlist loading
 src/fmt.rs       ABK→format translation, templates, expansion engine
 src/engine.rs    generation, global dedup, buffered output
 src/util.rs      Ruby-compatible string helpers (+ the one unsafe block)
-tests/parity/    411-case oracle harness, fixtures, Ruby compat shim
+tests/parity/    435-case oracle harness, fixtures, Ruby compat shim
 bench/           benchmark driver + generated data
 PERFORMANCE.md   measurements, profiling, optimization notes
 ```

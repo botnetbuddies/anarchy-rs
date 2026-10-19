@@ -35,18 +35,19 @@ threshold unless `--threads 1` is passed.
 <!-- BENCH:START -->
 | Case | Rust (min) | Ruby (min) | Speedup | Rust RSS MiB | Ruby RSS MiB |
 |---|---:|---:|---:|---:|---:|
-| tiny invocation (`anna key`) | 800 µs | 173.7 ms | 217× | 3.3 | 14.9 |
-| 10k-row input file | 132.8 ms | 14.37 s | 108× | 5.0 | 28.2 |
-| 100k-row input file | 2.59 s | 141.66 s | 55× | 41.3 | 112.9 |
-| 1M substitutions (full output) | 427.5 ms | 11.50 s | 27× | 49.1 | 226.7 |
-| 1M substitutions, `-m 5` | 2.2 ms | 7.20 s | 3,314× | 3.3 | 167.6 |
-| custom `-F` (strict), 10k combinations | 15.9 ms | 376.6 ms | 24× | 3.3 | 19.5 |
+| tiny invocation (`anna key`) | 1.0 ms | 161.0 ms | 158× | 3.3 | 14.9 |
+| 10k-row input file | 72.0 ms | 12.39 s | 172× | 4.9 | 28.0 |
+| 100k-row input file | 516.8 ms | 141.61 s | 274× | 44.4 | 119.8 |
+| `--auto` cross-product (1M people) | 101.4 ms | 43.07 s | 425× | 3.4 | 278.4 |
+| 1M substitutions (full output) | 277.9 ms | 10.16 s | 37× | 44.7 | 226.8 |
+| 1M substitutions, `-m 5` | 1.6 ms | 7.45 s | 4,547× | 3.1 | 167.7 |
+| custom `-F` (strict), 10k combinations | 15.1 ms | 431.9 ms | 29× | 3.2 | 19.4 |
 
-The 100k Rust figure is the pessimistic end of the observed range: the sweep's
-`--runs 2` minimum was 2.59 s, and a focused 5-run re-measurement of the same
-case taken immediately afterwards was 2.21 s (64×). Ruby is stable at ~142 s.
-That variance is host load, not code: the 4-core container was running other
-work throughout (load average 3–6).
+The 100k Rust number tracks host load: this sweep's `--runs 2` minimum was
+0.52 s, a focused interleaved run of the same case took 0.63 s with four
+threads and 0.71 s on one thread, and Ruby ranged from 142 s to 162 s across
+sweeps. The 4-core container was running other work throughout (load average
+3–6), so treat absolute times as pessimistic and compare ratios.
 <!-- BENCH:END -->
 
 ### Startup latency
@@ -56,8 +57,8 @@ option parsing — the case where a one-shot CLI lives or dies.
 
 | | Rust (static musl) | Ruby |
 |---|---|---|
-| `username-anarchy anna key` | **0.8 ms** | 198 ms |
-| `--help` | ~0.7 ms | ~180 ms |
+| `username-anarchy anna key` | **0.90 ms** | 161 ms |
+| `--help` | **0.66 ms** | ~180 ms |
 
 Two factors matter:
 
@@ -93,14 +94,16 @@ of the ordered enumeration are exactly Ruby's first N (verified by the harness).
 | Case | Rust peak RSS | Ruby peak RSS |
 |---|---:|---:|
 | tiny | 3.3 MiB | 14.9 MiB |
-| 10k rows | 5.0 MiB | 28.2 MiB |
-| 100k rows | 41.3 MiB | 112.9 MiB |
-| 1M substitutions | 49.1 MiB | 226.7 MiB |
+| 10k rows | 4.9 MiB | 28.0 MiB |
+| 100k rows | 44.4 MiB | 119.8 MiB |
+| `--auto` 1M people | 3.4 MiB | 278.4 MiB |
+| 1M substitutions | 44.7 MiB | 226.8 MiB |
 
-Rust stores each unique output line once in a contiguous arena plus an 8-byte
-`(offset, len)` record and one open-addressed table slot. Ruby keeps a
-`Set` of `String`s plus the fully materialised expansion array, which is why
-the substitution case is ~4.6× larger.
+Rust stores each unique output line once in a contiguous arena plus a 12-byte
+`(offset, len, hash tag)` record, a one-byte comment flag, and one
+open-addressed table slot (two `u32`s, ~8 bytes at the 0.7 load factor). Ruby
+keeps a `Set` of `String`s plus the fully materialised expansion array, which is
+why the substitution case is several times larger.
 
 ## Where the time goes
 
@@ -147,17 +150,42 @@ Two problems:
 ```
 
 `memcpy` fell from 17.8% to 4.4% and total CPU dropped by roughly a third. The
-remaining allocation traffic is mostly `Name::init` clones and expansion
-temporaries; the dedup path is allocation-free for duplicates.
+remaining allocation traffic at that point was mostly `Name::init` clones and
+expansion temporaries (both removed in Round 2); the dedup path was already
+allocation-free for duplicates.
+
+### Final profile (after Round 2)
+
+Serial run, same input:
+
+```
+31.0%  Sink::insert             (hash + open-addressed probe + arena copy)
+22.3%  gen_named                (template resolution + emission)
+15.0%  util::downcase_into
+ 6.5%  enumerate closure         (emit_lower callback)
+ 5.6%  fmt::val_lower
+ 3.6%  __libc_free
+ 3.6%  memcpy
+ 3.2%  memcmp
+ 2.7%  __libc_malloc_impl
+ 1.9%  NameRef::from_person
+```
+
+What remains is the part that cannot be skipped: hashing and probing every
+candidate, comparing duplicates, and copying each fragment into the resolved
+line. Allocation no longer appears in the hot path (the `malloc`/`free` samples
+are arena and sink growth). With the per-candidate allocations gone, four
+threads are again ~1.4× faster than one on this loaded host instead of slower.
 
 ## Optimizations kept
 
 1. **Arena de-duplication with an open-addressed table** (`src/engine.rs`).
-   Unique line bytes live in one `Vec<u8>`; an `(offset, len)` record per line
-   preserves emission order; a power-of-two table of `(hash tag, entry index)`
-   gives O(1) membership. A duplicate costs one hash, one cache-line probe and a
-   byte comparison — no allocation. Storing the tag inline avoids the second
-   indirection a `HashMap<u64, index>` needs.
+   Unique line bytes (plus their terminator) live in one `Vec<u8>`; an
+   `(offset, len, tag)` record per line preserves emission order; a power-of-two
+   table of `(tag, entry index)` gives O(1) membership. A duplicate costs one
+   hash, one cache-line probe and a byte comparison — no allocation. Storing the
+   tag inline avoids the second indirection a `HashMap<u64, index>` needs, and
+   lets table growth skip re-hashing the line bytes.
 
 2. **No locks on the hot path.** Workers own their sink outright. The parallel
    path generates per-chunk sinks and merges them once at the end, so there is
@@ -172,12 +200,125 @@ temporaries; the dedup path is allocation-free for duplicates.
    `max_sub + 1` results instead of materialising the full cartesian product.
    Verbose counts still report the full product, matching the original.
 
-5. **Fast paths for the common case.** `tokenize` returns an empty `Vec`
-   (no allocation) when the resolved string has no `%`; the non-case-insensitive
-   path inserts the caller's slice directly; ASCII checks gate the Unicode
-   fallbacks.
+5. **Fast paths for the common case.** With substitutions off, `has_token`
+   decides whether a template is skipped without building the occurrence
+   vector; the non-case-insensitive path inserts the caller's slice directly;
+   ASCII checks gate the Unicode fallbacks.
 
 6. **Small-copy fast path** — the only `unsafe` block (see below).
+
+## Round 2: removing structural overhead
+
+The first pass optimized the generation loop. A second pass targeted costs that
+were outside that loop, or that only show up at scale.
+
+### `--auto` streams the cross-product
+
+`-a` used to materialize every `(given, family)` `Person` up front, cloning both
+strings for each combination. The default Facebook dataset is 10,000 × 10,000 =
+10^8 people: 200M+ allocations *before* the first line is generated, built
+single-threaded while the parallel generator waited.
+
+The two dictionaries now stay as borrowed slices. Each worker owns a contiguous
+range of the family list and constructs a `NameRef` per combination; no `Person`
+or per-field `Vec` is allocated, and generation starts immediately.
+
+A 1,000 × 1,000 (10^6-person) cross-product with one plugin (`-f first -m 1`,
+1,000 unique lines):
+
+| | Rust | Ruby 3.4 |
+|---|---:|---:|
+| wall time | **0.14 s** | 43.1 s |
+| peak RSS | **3.3 MiB** | 278.4 MiB |
+
+Rust never holds the cross-product: peak memory is the output arena. Ruby
+re-reads the given-names file once per family and stores all 10^6 hashes.
+
+### `finish()` is a move, not a second copy
+
+The arena stores each line followed by its `\n`, and an entry's length excludes
+the terminator. `finish()` now returns the arena itself. Previously it allocated
+a second buffer and copied every line to insert newlines, doubling output peak
+memory and costing a full pass over the data.
+
+### Table growth does not re-hash the bytes
+
+Each entry stores a 32-bit hash tag at insert time. The low half of the hash is
+both the bucket index and the probe tag, so `grow()` is pure data movement
+(`index = tag & mask`) rather than a random-access re-read of every live line.
+
+### Case folding happens at most once
+
+With `-C true` (the default) the original upcases `%F`/`%L` during template
+substitution and then downcases the finished candidate. For the built-in
+templates the composition `downcase(upcase_it(x))` is computed in one pass
+(`util::upcase_then_downcase_into`), including the `ß -> SS -> ss` expansion
+that plain `downcase` would get wrong. The resolved string is already final, so
+`Emitter::emit_lower` inserts it directly instead of routing it through a `key`
+buffer and scanning it again. `emit_lower` falls back to the full path on any
+uppercase or non-ASCII byte — so unusual wordlists or literals still reproduce
+Ruby exactly — and custom `-F` templates plus the two truncating plugins keep
+the original path.
+
+### Capacity hints (measured, deliberately small)
+
+`Emitter::with_capacity` is wired to the candidate estimate, but the hint is
+capped at 4,096 entries per worker. Reserving for the raw estimate was measured
+to be a *loss* on the 100k-row case: the estimate bounds candidates, not unique
+lines, and a table sized for it leaves cache and pays page faults. The small
+hint removes the first few doublings without the RSS penalty.
+
+### Parallel merge
+
+Above four workers, sinks are merged pairwise in a tree (each round halves the
+count and runs in parallel). At four or fewer the serial fold is kept: on this
+4-core host the pairwise version was within measurement noise on time while
+adding several MiB of per-merge-thread allocator arenas.
+
+### Borrowing input rows, and not building discarded tokens
+
+Two further costs showed up only after the structural work was gone.
+
+1. `gen_people` called `Name::init` for every row, cloning all six
+   `Option<Vec<u8>>` fields. It now builds a borrowing `NameRef`
+   (`NameRef::from_person`), reproducing the original's initial-derivation and
+   its `middleinitial = firstinitial` / `lastinitial = firstinitial`
+   copy/paste bug. That removes six allocations per row.
+2. With substitutions off (the default) a template whose name field is missing
+   is skipped. The skip test used to run `tokenize` first, which allocated three
+   vectors for every such template — about sixteen allocations per ordinary row
+   (a row with no middle name trips the middle-name templates).
+   `fmt::has_token` answers the same yes/no question with a scan; `tokenize`
+   still runs when `-s on` actually needs the occurrences.
+
+These were not just CPU wins. Profiling the 4-thread run showed 33% of samples
+in musl's allocator lock (`__lock`/`__unlock`), because musl uses a single
+malloc lock. The parallel path was slower than the serial one for exactly that
+reason. With per-row clones and discarded occurrence vectors gone, four threads
+are again faster than one.
+
+### Effect
+
+Same host, old binary vs new, measured in the same interleaved run (hyperfine
+alternates the two, so load affects both):
+
+| | before | after |
+|---|---:|---:|
+| 100k rows, 1 thread | 1.24 s | 0.71 s |
+| 100k rows, 4 threads | 2.13 s | 0.63 s |
+| 100k rows, 4 threads, peak RSS | 42.6 MiB | 47.1 MiB |
+| `--auto` 1M people | 3.47 s | 0.14 s |
+| `--auto` 1M people, peak RSS | 173.2 MiB | 3.3 MiB |
+| 1M substitutions | 0.45 s | 0.35 s |
+
+Peak RSS rises by a few MiB on the 100k case because each entry now carries its
+hash tag and the arena carries the line terminators — the price of never
+re-hashing on growth and never copying the output in `finish()`.
+
+These figures are from one interleaved run: hyperfine alternates the old and
+new binaries, so host load affects both. Four threads now beat one; the absolute
+times still move with the container's load (load average 3–6 on 4 cores). The
+larger win is the CPU reduction plus the removal of the `--auto` memory wall.
 
 ## The single `unsafe` block
 
@@ -240,17 +381,16 @@ USERNAME_ANARCHY_THREADS=1          # force serial
 USERNAME_ANARCHY_MIN_PARALLEL=0     # force parallel even for tiny inputs
 ```
 
-Measured on the loaded 4-core host, the 100k case went from ~1.65 s (1 thread)
-to ~1.33 s (2 threads); 4 threads was slower because the host was already
-saturated. On an idle machine the chunked, lock-free design scales close to
-linearly until memory bandwidth becomes the limit. Ordering is not part of the
-output contract, and the merge is deterministic per chunk.
+Measured on the loaded 4-core host in one interleaved run, the 100k case took
+~0.71 s on one thread and ~0.63 s on four. On an idle machine the chunked,
+lock-free design scales further until memory bandwidth becomes the limit.
+Ordering is not part of the output contract; the merged content (the line set)
+is deterministic regardless of worker count.
 
 ## Correctness vs speed
 
-Every optimization was validated against the 411-case parity gate
-(`make test`), including cases specifically constructed to exercise the
-optimized paths:
+Every optimization was validated against the parity gate (`make test`),
+including cases specifically constructed to exercise the optimized paths:
 
 * expansion ordering and `-m` truncation (odometer order must match Ruby's),
 * token reassembly in custom `-F` formats (round-based engine),

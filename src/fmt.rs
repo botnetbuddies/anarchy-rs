@@ -11,7 +11,7 @@
 
 use std::sync::OnceLock;
 
-use crate::names::{load_given_list, Name, WordList};
+use crate::names::{load_given_list, NameFields, WordList};
 use crate::util;
 
 /// Expansion tokens that can survive the format-string substitution stage.
@@ -310,8 +310,8 @@ impl Ctx {
 pub fn exp_len(kind: ExpKind, ctx: &Ctx) -> usize {
     match kind {
         ExpKind::AZ | ExpKind::AZUp => 26,
-        ExpKind::Given | ExpKind::GivenUp => ctx.given().items.len(),
-        ExpKind::Surname | ExpKind::SurnameUp => ctx.family().items.len(),
+        ExpKind::Given | ExpKind::GivenUp => ctx.given().len(),
+        ExpKind::Surname | ExpKind::SurnameUp => ctx.family().len(),
         ExpKind::DD => 100,
         ExpKind::D => 10,
     }
@@ -322,8 +322,8 @@ fn write_exp(kind: ExpKind, i: usize, ctx: &Ctx, out: &mut Vec<u8>) {
     match kind {
         ExpKind::AZ => out.push(b'a' + i as u8),
         ExpKind::AZUp => out.push(b'A' + i as u8),
-        ExpKind::Given | ExpKind::GivenUp => util::push_bytes(out, &ctx.given().items[i]),
-        ExpKind::Surname | ExpKind::SurnameUp => util::push_bytes(out, &ctx.family().items[i]),
+        ExpKind::Given | ExpKind::GivenUp => util::push_bytes(out, ctx.given().get(i)),
+        ExpKind::Surname | ExpKind::SurnameUp => util::push_bytes(out, ctx.family().get(i)),
         ExpKind::DD => {
             out.push(b'0' + (i / 10) as u8);
             out.push(b'0' + (i % 10) as u8);
@@ -334,29 +334,69 @@ fn write_exp(kind: ExpKind, i: usize, ctx: &Ctx, out: &mut Vec<u8>) {
 
 /// Resolve a template to the substituted byte string the original would hand to
 /// its expansion loop.
-pub fn resolve_string(segs: &[Seg], lits: &[u8], name: &Name, out: &mut Vec<u8>) {
+pub fn resolve_string<N: NameFields + ?Sized>(
+    segs: &[Seg],
+    lits: &[u8],
+    name: &N,
+    out: &mut Vec<u8>,
+) {
     out.clear();
     for seg in segs {
         match *seg {
             Seg::Lit(a, b) => util::push_bytes(out, &lits[a as usize..b as usize]),
-            Seg::FirstUpper => val(&name.firstname, out, true, b"%Givenname"),
-            Seg::MiddleUpper => val(&name.middlename, out, true, b"%Givenname"),
-            Seg::LastUpper => val(&name.lastname, out, true, b"%Surname"),
-            Seg::FirstLower => val(&name.firstname, out, false, b"%givenname"),
-            Seg::MiddleLower => val(&name.middlename, out, false, b"%givenname"),
-            Seg::LastLower => val(&name.lastname, out, false, b"%surname"),
-            Seg::FirstInitUpper => val(&name.firstinitial, out, true, b"%A-Z"),
-            Seg::MiddleInitUpper => val(&name.middleinitial, out, true, b"%A-Z"),
-            Seg::LastInitUpper => val(&name.lastinitial, out, true, b"%A-Z"),
-            Seg::FirstInitLower => val(&name.firstinitial, out, false, b"%a-z"),
-            Seg::MiddleInitLower => val(&name.middleinitial, out, false, b"%a-z"),
-            Seg::LastInitLower => val(&name.lastinitial, out, false, b"%a-z"),
+            Seg::FirstUpper => val(name.firstname(), out, true, b"%Givenname"),
+            Seg::MiddleUpper => val(name.middlename(), out, true, b"%Givenname"),
+            Seg::LastUpper => val(name.lastname(), out, true, b"%Surname"),
+            Seg::FirstLower => val(name.firstname(), out, false, b"%givenname"),
+            Seg::MiddleLower => val(name.middlename(), out, false, b"%givenname"),
+            Seg::LastLower => val(name.lastname(), out, false, b"%surname"),
+            Seg::FirstInitUpper => val(name.firstinitial(), out, true, b"%A-Z"),
+            Seg::MiddleInitUpper => val(name.middleinitial(), out, true, b"%A-Z"),
+            Seg::LastInitUpper => val(name.lastinitial(), out, true, b"%A-Z"),
+            Seg::FirstInitLower => val(name.firstinitial(), out, false, b"%a-z"),
+            Seg::MiddleInitLower => val(name.middleinitial(), out, false, b"%a-z"),
+            Seg::LastInitLower => val(name.lastinitial(), out, false, b"%a-z"),
             Seg::Tok(k) => util::push_bytes(out, k.text()),
         }
     }
 }
 
-fn val(v: &Option<Vec<u8>>, out: &mut Vec<u8>, upper: bool, missing: &[u8]) {
+/// Resolve a static template for a case-insensitive run.
+///
+/// Uppercase segments use `downcase(upcase_it(x))` — the exact composition the
+/// original applies (upcase during substitution, downcase before printing) —
+/// and lowercase segments are downcased as usual. The result is therefore
+/// already in final form, so [`crate::engine::Emitter::emit_lower`] can insert
+/// it without a second case-folding pass. Only used for the 24 built-in
+/// templates, whose literals contain no letters.
+pub fn resolve_string_lower<N: NameFields + ?Sized>(
+    segs: &[Seg],
+    lits: &[u8],
+    name: &N,
+    out: &mut Vec<u8>,
+) {
+    out.clear();
+    for seg in segs {
+        match *seg {
+            Seg::Lit(a, b) => util::push_bytes(out, &lits[a as usize..b as usize]),
+            Seg::FirstUpper => val_lower(name.firstname(), out, b"%Givenname"),
+            Seg::MiddleUpper => val_lower(name.middlename(), out, b"%Givenname"),
+            Seg::LastUpper => val_lower(name.lastname(), out, b"%Surname"),
+            Seg::FirstLower => val(name.firstname(), out, false, b"%givenname"),
+            Seg::MiddleLower => val(name.middlename(), out, false, b"%givenname"),
+            Seg::LastLower => val(name.lastname(), out, false, b"%surname"),
+            Seg::FirstInitUpper => val_lower(name.firstinitial(), out, b"%A-Z"),
+            Seg::MiddleInitUpper => val_lower(name.middleinitial(), out, b"%A-Z"),
+            Seg::LastInitUpper => val_lower(name.lastinitial(), out, b"%A-Z"),
+            Seg::FirstInitLower => val(name.firstinitial(), out, false, b"%a-z"),
+            Seg::MiddleInitLower => val(name.middleinitial(), out, false, b"%a-z"),
+            Seg::LastInitLower => val(name.lastinitial(), out, false, b"%a-z"),
+            Seg::Tok(k) => util::push_bytes(out, k.text()),
+        }
+    }
+}
+
+fn val(v: Option<&[u8]>, out: &mut Vec<u8>, upper: bool, missing: &[u8]) {
     match v {
         Some(s) => {
             if upper {
@@ -371,6 +411,17 @@ fn val(v: &Option<Vec<u8>>, out: &mut Vec<u8>, upper: bool, missing: &[u8]) {
     }
 }
 
+fn val_lower(v: Option<&[u8]>, out: &mut Vec<u8>, missing: &[u8]) {
+    match v {
+        Some(s) => {
+            if !util::upcase_then_downcase_into(s, out) {
+                util::push_bytes(out, missing);
+            }
+        }
+        None => util::push_bytes(out, missing),
+    }
+}
+
 /// One expansion-token occurrence in a resolved string.
 pub struct Occ {
     pub off: usize,
@@ -378,6 +429,25 @@ pub struct Occ {
     pub kind: ExpKind,
     /// Position in the rank-sorted odometer order (0 = outermost loop).
     pub odo: usize,
+}
+
+/// Whether `s` contains at least one expansion token.
+///
+/// Equivalent to `!tokenize(s).is_empty()`, but allocation-free; the common
+/// no-substitution path only needs the yes/no answer.
+pub fn has_token(s: &[u8]) -> bool {
+    let mut i = 0usize;
+    while i < s.len() {
+        if s[i] == b'%' {
+            for (tok, _) in EXP_TOKENS {
+                if s[i..].starts_with(tok) {
+                    return true;
+                }
+            }
+        }
+        i += 1;
+    }
+    false
 }
 
 /// Find every expansion token in the resolved string, in left-to-right order.

@@ -13,7 +13,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use engine::{Emitter, GenOpts, GenRet, Scratch};
+use engine::{AutoNames, Emitter, GenOpts, GenRet, Scratch};
 use fmt::{Ctx, Plugin};
 use names::{Name, Person};
 
@@ -461,31 +461,41 @@ fn run() -> i32 {
     };
 
     // ---- auto cross product ----------------------------------------------
-    if opts.no_input_names && opts.format_to_recognise.is_none() {
-        let family = match read_auto_lines(&opts.family_names) {
+    //
+    // Do not materialize the given x family product. With the default Facebook
+    // dictionaries that is 10^8 `Person` records (200M+ heap allocations)
+    // before the first candidate is generated. The work is streamed from the
+    // two dictionaries instead, and parallelized over the family range.
+    let mut auto_given: Vec<Option<Vec<u8>>> = Vec::new();
+    let mut auto_family: Vec<Option<Vec<u8>>> = Vec::new();
+    let is_auto = opts.no_input_names && opts.format_to_recognise.is_none();
+    if is_auto {
+        auto_family = match read_auto_lines(&opts.family_names) {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("{}", e);
                 return 1;
             }
         };
-        let given = match read_auto_lines(&opts.given_names) {
+        auto_given = match read_auto_lines(&opts.given_names) {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("{}", e);
                 return 1;
             }
         };
-        people.reserve(family.len().saturating_mul(given.len()));
-        for fam in &family {
-            for giv in &given {
-                let mut p: Person = Default::default();
-                p[names::FIRSTNAME] = giv.clone();
-                p[names::LASTNAME] = fam.clone();
-                people.push(p);
-            }
-        }
     }
+    let work = if is_auto {
+        Work::Auto {
+            head: &people,
+            names: AutoNames {
+                given: &auto_given,
+                family: &auto_family,
+            },
+        }
+    } else {
+        Work::Fixed(&people)
+    };
 
     // ---- generate ---------------------------------------------------------
     let ctx = Ctx::new(opts.given_names.clone(), opts.family_names.clone());
@@ -497,7 +507,12 @@ fn run() -> i32 {
         suffix: opts.suffix.clone(),
     };
 
-    let est = engine::estimate(&people, &selected, &ctx, &gen_opts);
+    let est = match &work {
+        Work::Fixed(people) => engine::estimate(people, &selected, &ctx, &gen_opts),
+        Work::Auto { head, names } => {
+            engine::estimate_auto(head, *names, &selected, &ctx, &gen_opts)
+        }
+    };
     let threads = std::env::var("USERNAME_ANARCHY_THREADS")
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
@@ -515,9 +530,9 @@ fn run() -> i32 {
     let parallel = est > min_parallel && threads > 1;
 
     let generated = if parallel {
-        run_parallel(&people, &selected, &ctx, &gen_opts, threads)
+        run_parallel(work, &selected, &ctx, &gen_opts, threads, est)
     } else {
-        run_serial(&people, &selected, &ctx, &gen_opts)
+        run_serial(work, &selected, &ctx, &gen_opts, est)
     };
     let generated = match generated {
         Ok(g) => g,
@@ -729,40 +744,98 @@ fn read_auto_lines(path: &str) -> Result<Vec<Option<Vec<u8>>>, String> {
     Ok(out)
 }
 
+/// Where the people to generate come from.
+///
+/// `Auto` deliberately holds the two dictionaries rather than a materialized
+/// cross-product: `-a` with the Facebook lists is 10^8 combinations, and
+/// building them up front would dominate the run.
+#[derive(Clone, Copy)]
+enum Work<'a> {
+    Fixed(&'a [Person]),
+    Auto {
+        head: &'a [Person],
+        names: AutoNames<'a>,
+    },
+}
+
 fn run_serial(
-    people: &[Person],
+    work: Work,
     plugins: &[Plugin],
     ctx: &Ctx,
     opts: &GenOpts,
+    est: u64,
 ) -> Result<Vec<u8>, String> {
-    let mut em = Emitter::new(opts);
+    let mut em = Emitter::with_capacity(opts, engine::worker_hint(est, 1));
     let mut sc = Scratch::new();
-    engine::gen_people(people, plugins, ctx, opts, &mut em, &mut sc)?;
+    match work {
+        Work::Fixed(people) => engine::gen_people(people, plugins, ctx, opts, &mut em, &mut sc)?,
+        Work::Auto { head, names } => {
+            engine::gen_auto(head, names, plugins, ctx, opts, &mut em, &mut sc)?
+        }
+    }
     Ok(em.finish())
 }
 
 fn run_parallel(
-    people: &[Person],
+    work: Work,
     plugins: &[Plugin],
     ctx: &Ctx,
     opts: &GenOpts,
     threads: usize,
+    est: u64,
 ) -> Result<Vec<u8>, String> {
-    let chunk = people.len().div_ceil(threads).max(1);
+    let hint = engine::worker_hint(est, threads);
     let mut err: Option<String> = None;
     let mut sinks: Vec<engine::Sink> = Vec::new();
     std::thread::scope(|s| {
-        let handles: Vec<_> = people
-            .chunks(chunk)
-            .map(|chunk_people| {
-                s.spawn(move || {
-                    let mut em = Emitter::new(opts);
-                    let mut sc = Scratch::new();
-                    let r = engine::gen_people(chunk_people, plugins, ctx, opts, &mut em, &mut sc);
-                    (r, em.into_sink())
-                })
-            })
-            .collect();
+        let mut handles = Vec::new();
+        match work {
+            Work::Fixed(people) => {
+                let chunk = people.len().div_ceil(threads).max(1);
+                for chunk_people in people.chunks(chunk) {
+                    handles.push(s.spawn(move || {
+                        let mut em = Emitter::with_capacity(opts, hint);
+                        let mut sc = Scratch::new();
+                        let r =
+                            engine::gen_people(chunk_people, plugins, ctx, opts, &mut em, &mut sc);
+                        (r, em.into_sink())
+                    }));
+                }
+            }
+            Work::Auto { head, names } => {
+                if names.family.is_empty() {
+                    // No families: only the head (sentinel) remains.
+                    let empty = AutoNames {
+                        given: names.given,
+                        family: &[],
+                    };
+                    handles.push(s.spawn(move || {
+                        let mut em = Emitter::with_capacity(opts, hint);
+                        let mut sc = Scratch::new();
+                        let r = engine::gen_auto(head, empty, plugins, ctx, opts, &mut em, &mut sc);
+                        (r, em.into_sink())
+                    }));
+                } else {
+                    let chunk = names.family.len().div_ceil(threads).max(1);
+                    for (i, fam_chunk) in names.family.chunks(chunk).enumerate() {
+                        // The sentinel/positional people are generated once.
+                        let head_part: &[Person] = if i == 0 { head } else { &[] };
+                        let part = AutoNames {
+                            given: names.given,
+                            family: fam_chunk,
+                        };
+                        handles.push(s.spawn(move || {
+                            let mut em = Emitter::with_capacity(opts, hint);
+                            let mut sc = Scratch::new();
+                            let r = engine::gen_auto(
+                                head_part, part, plugins, ctx, opts, &mut em, &mut sc,
+                            );
+                            (r, em.into_sink())
+                        }));
+                    }
+                }
+            }
+        }
         for h in handles {
             match h.join() {
                 Ok((Ok(()), sink)) => sinks.push(sink),
@@ -782,16 +855,54 @@ fn run_parallel(
     if let Some(e) = err {
         return Err(e);
     }
-    let mut sinks = sinks.into_iter();
-    match sinks.next() {
-        None => Ok(Vec::new()),
-        Some(mut acc) => {
-            for other in sinks {
-                acc.absorb(other);
+    Ok(merge_sinks(sinks).finish())
+}
+
+/// Merge per-worker sinks pairwise (`log2(workers)` rounds) so the merge uses
+/// the available cores instead of a single-threaded serial fold.
+fn merge_sinks(sinks: Vec<engine::Sink>) -> engine::Sink {
+    if sinks.len() <= 4 {
+        // At low worker counts the serial tail is a few percent at most, and
+        // folding in one thread avoids the extra per-merge-thread arenas.
+        let mut it = sinks.into_iter();
+        return match it.next() {
+            None => engine::Sink::new(),
+            Some(mut acc) => {
+                for other in it {
+                    acc.absorb(other);
+                }
+                acc
             }
-            Ok(acc.finish())
-        }
+        };
     }
+    let mut sinks = sinks;
+    while sinks.len() > 1 {
+        let mut pairs: Vec<(engine::Sink, Option<engine::Sink>)> =
+            Vec::with_capacity(sinks.len().div_ceil(2));
+        let mut it = sinks.into_iter();
+        while let Some(a) = it.next() {
+            pairs.push((a, it.next()));
+        }
+        let mut next = Vec::with_capacity(pairs.len());
+        std::thread::scope(|s| {
+            let mut handles = Vec::with_capacity(pairs.len());
+            for (a, b) in pairs {
+                handles.push(s.spawn(move || match b {
+                    Some(b) => {
+                        let mut a = a;
+                        a.absorb(b);
+                        a
+                    }
+                    None => a,
+                }));
+            }
+            for h in handles {
+                next.push(h.join().expect("merge thread panicked"));
+            }
+        });
+        sinks = next;
+    }
+    sinks.pop().unwrap_or_else(engine::Sink::new)
 }
 
 // ---------------------------------------------------------------------------
