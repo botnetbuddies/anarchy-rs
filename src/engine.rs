@@ -2,412 +2,186 @@
 
 use crate::fmt::{self, Ctx, Plugin, PluginKind};
 use crate::hash::hash_key;
-use crate::names::{NameFields, NameRef, Person, Row};
+use crate::names::{NameFields, NameRef, Person};
 use crate::util;
 
-/// Log2 of the size of one output arena chunk (256 KiB).
-const CHUNK_SHIFT: u32 = 18;
-const CHUNK_SIZE: usize = 1 << CHUNK_SHIFT;
-const CHUNK_MASK: u64 = (CHUNK_SIZE - 1) as u64;
-
-/// The full 64-bit hash of a candidate line, remapped so it is never zero.
-///
-/// Zero is reserved as the "comment" marker in [`Entry`] and as the "empty
-/// slot" marker in the de-duplication table.
-#[inline]
-fn line_hash(key: &[u8]) -> u64 {
-    let h = hash_key(key);
-    if h == 0 {
-        1
-    } else {
-        h
-    }
+pub trait SinkTarget {
+    fn insert(&mut self, key: &[u8]);
+    fn push_line(&mut self, line: &[u8]);
 }
 
-/// One output line: byte range in the arena plus its full 64-bit hash.
+/// Global de-duplication set and buffered output.
 ///
-/// `off` packs the chunk index and the offset within it
-/// (`(chunk << CHUNK_SHIFT) | offset`), so a single `u64` addresses the whole
-/// arena. That removes the old flat-`u32` 4 GiB ceiling without widening every
-/// comparison. `hash == 0` marks a comment, which never enters the table.
-#[derive(Clone, Copy)]
-struct Entry {
-    off: u64,
-    hash: u64,
-    len: u32,
-}
-
-/// Borrow the line (excluding its terminator) addressed by `ent`.
-#[inline]
-fn entry_bytes<'a>(chunks: &'a [Vec<u8>], ent: &Entry) -> &'a [u8] {
-    let ci = (ent.off >> CHUNK_SHIFT) as usize;
-    let off = (ent.off & CHUNK_MASK) as usize;
-    &chunks[ci][off..off + ent.len as usize]
-}
-
-/// De-duplication set plus ordered output for one worker.
-///
-/// Every emitted line's bytes are stored once, contiguously, in a list of fixed
-/// arenas (`chunks`), followed by a `\n`; `entries` records `(offset, hash,
-/// len)` for each line in emission order (comment lines included). `len`
-/// excludes the terminator, so duplicate comparisons and merges see exactly the
-/// original line. Candidate lines are additionally threaded through an
-/// open-addressed hash set so a repeated candidate costs one hash, one byte
-/// comparison and *no allocation* - the profiler showed malloc/free dominating
-/// a straightforward `HashSet<Vec<u8>>` implementation.
-///
-/// The table stores its `u64` hashes and `u32` entry indices in two parallel
-/// arrays: probing a miss touches only the hash array, which is the common case
-/// for unique lines, and the wide hash makes a false tag match effectively
-/// impossible before the byte comparison runs.
-///
-/// Workers never share a `Sink`, so no locking is needed on the hot path; the
-/// parallel path merges the per-worker sinks at the end.
-pub struct Sink {
-    chunks: Vec<Vec<u8>>,
-    entries: Vec<Entry>,
-    /// Open-addressed set: `hashes[i] == 0` marks an empty slot and
-    /// `slots[i]` holds `entry index + 1` for the matching line.
-    hashes: Vec<u64>,
-    slots: Vec<u32>,
+/// Uses an open-addressing table with structure-of-arrays layout:
+/// `hashes` stores dense 32-bit hash tags for fast cache-line scanning.
+/// `slots` stores `(offset, len)` pointing into `out`.
+pub struct FinalSink {
+    out: Vec<u8>,
+    hashes: Vec<u32>,
+    slots: Vec<(u64, u32)>,
     mask: usize,
     filled: usize,
-    /// Capacity of the very first chunk; later chunks are `CHUNK_SIZE`.
-    first_cap: usize,
 }
 
-impl Sink {
-    /// `expected` is a hint for the number of *unique* lines. Callers cap it
-    /// (see [`worker_hint`]) so a bad estimate cannot reserve gigabytes.
-    pub fn with_capacity(expected: usize) -> Sink {
-        let mut cap = 128usize;
+impl FinalSink {
+    #[allow(dead_code)]
+    pub fn new() -> Self {
+        Self::with_capacity(16384)
+    }
+
+    pub fn with_capacity(expected: usize) -> Self {
+        let mut cap = 16384usize;
         while cap.saturating_mul(7) / 10 < expected {
             match cap.checked_mul(2) {
                 Some(c) => cap = c,
                 None => break,
             }
         }
-        Sink {
-            chunks: Vec::new(),
-            entries: Vec::with_capacity(expected),
-            hashes: vec![0u64; cap],
-            slots: vec![0u32; cap],
+        FinalSink {
+            out: Vec::with_capacity(expected.saturating_mul(12)),
+            hashes: vec![0u32; cap],
+            slots: vec![(0u64, 0u32); cap],
             mask: cap - 1,
             filled: 0,
-            first_cap: expected.saturating_mul(16).clamp(256, CHUNK_SIZE),
         }
     }
 
-    /// Start a fresh arena chunk and return its index.
-    #[cold]
-    fn new_chunk(&mut self) -> usize {
-        let cap = if self.chunks.is_empty() {
-            self.first_cap
-        } else {
-            CHUNK_SIZE
-        };
-        self.chunks.push(Vec::with_capacity(cap));
-        self.chunks.len() - 1
-    }
-
-    /// Append `line` plus its terminator, returning its packed offset and
-    /// length. A line never spans two chunks, so a chunk that would overflow is
-    /// closed early (and a line longer than a chunk simply gets its own).
     #[inline]
-    fn append(&mut self, line: &[u8]) -> (u64, u32) {
-        let need = line.len() + 1;
-        let ci = match self.chunks.last() {
-            Some(c) if c.len() + need <= CHUNK_SIZE => self.chunks.len() - 1,
-            _ => self.new_chunk(),
-        };
-        let c = &mut self.chunks[ci];
-        let off = c.len();
-        c.extend_from_slice(line);
-        c.push(b'\n');
-        (((ci as u64) << CHUNK_SHIFT) | off as u64, line.len() as u32)
-    }
-
-    /// Append a line that must not participate in de-duplication (a comment).
-    #[inline]
-    fn push_line(&mut self, line: &[u8]) {
-        let (off, len) = self.append(line);
-        self.entries.push(Entry { off, hash: 0, len });
+    pub fn push_line(&mut self, line: &[u8]) {
+        util::push_bytes(&mut self.out, line);
+        self.out.push(b'\n');
     }
 
     #[inline]
-    fn insert(&mut self, key: &[u8]) {
-        self.insert_hashed(key, line_hash(key));
-    }
-
-    /// Insert with a precomputed 64-bit hash.
-    ///
-    /// The hash is both the probe value and the bucket index (`hash & mask`),
-    /// so a merge can reuse the hash each entry already stores instead of
-    /// hashing the bytes again.
-    #[inline]
-    fn insert_hashed(&mut self, key: &[u8], hash: u64) {
+    pub fn insert_hashed(&mut self, key: &[u8], mut tag: u32) {
+        if tag == 0 {
+            tag = 1;
+        }
         if self.filled * 10 >= self.hashes.len() * 7 {
             self.grow();
         }
-        let mut i = (hash as usize) & self.mask;
+        let mut i = (tag as usize) & self.mask;
         loop {
-            let h = self.hashes[i];
-            if h == 0 {
-                break;
+            let stored_tag = self.hashes[i];
+            if stored_tag == 0 {
+                let off = self.out.len() as u64;
+                let len = u32::try_from(key.len()).expect("candidate exceeds 4 GiB");
+                util::push_bytes(&mut self.out, key);
+                self.out.push(b'\n');
+                self.hashes[i] = tag;
+                self.slots[i] = (off, len);
+                self.filled += 1;
+                return;
             }
-            if h == hash {
-                let ent = self.entries[(self.slots[i] - 1) as usize];
-                let b = entry_bytes(&self.chunks, &ent);
-                if b.len() == key.len() && b == key {
-                    return;
+            if stored_tag == tag {
+                let (off, len) = self.slots[i];
+                if len as usize == key.len() {
+                    let existing = &self.out[off as usize..off as usize + len as usize];
+                    if existing == key {
+                        return;
+                    }
                 }
             }
             i = (i + 1) & self.mask;
         }
-        self.push_unique(key, hash, i);
-    }
-
-    /// Append a line known not to be present and register it in slot `i`.
-    #[inline]
-    fn push_unique(&mut self, key: &[u8], hash: u64, i: usize) {
-        let (off, len) = self.append(key);
-        self.entries.push(Entry { off, hash, len });
-        self.hashes[i] = hash;
-        self.slots[i] = self.entries.len() as u32;
-        self.filled += 1;
     }
 
     fn grow(&mut self) {
         let new_cap = self.hashes.len() * 2;
-        let mut hashes = vec![0u64; new_cap];
-        let mut slots = vec![0u32; new_cap];
-        let mask = new_cap - 1;
-        for (ei, ent) in self.entries.iter().enumerate() {
-            if ent.hash == 0 {
-                continue;
+        let new_mask = new_cap - 1;
+        let mut new_hashes = vec![0u32; new_cap];
+        let mut new_slots = vec![(0u64, 0u32); new_cap];
+        for i in 0..self.hashes.len() {
+            let tag = self.hashes[i];
+            if tag != 0 {
+                let slot = self.slots[i];
+                let mut idx = (tag as usize) & new_mask;
+                while new_hashes[idx] != 0 {
+                    idx = (idx + 1) & new_mask;
+                }
+                new_hashes[idx] = tag;
+                new_slots[idx] = slot;
             }
-            let mut i = (ent.hash as usize) & mask;
-            while hashes[i] != 0 {
-                i = (i + 1) & mask;
-            }
-            hashes[i] = ent.hash;
-            slots[i] = ei as u32 + 1;
         }
-        self.hashes = hashes;
-        self.slots = slots;
-        self.mask = mask;
+        self.hashes = new_hashes;
+        self.slots = new_slots;
+        self.mask = new_mask;
+    }
+
+    pub fn finish(self) -> Vec<u8> {
+        self.out
     }
 }
 
-/// A reference to one line in one worker sink, used by the merged output.
+impl SinkTarget for FinalSink {
+    #[inline]
+    fn insert(&mut self, key: &[u8]) {
+        let tag = hash_key(key) as u32;
+        self.insert_hashed(key, tag);
+    }
+    #[inline]
+    fn push_line(&mut self, line: &[u8]) {
+        self.push_line(line);
+    }
+}
+
 #[derive(Clone, Copy)]
-struct Ref {
-    sink: u32,
-    entry: u32,
+pub struct BatchEntry {
+    pub off: u64,
+    pub len: u32,
+    /// Zero marks comments; candidate hashes map zero to one, as FinalSink does.
+    pub tag: u32,
 }
 
-/// The result of generation: either ready-to-write chunk arenas, or a merge
-/// descriptor that references the per-worker sinks without copying their bytes.
-pub struct Output {
-    kind: OutputKind,
+pub struct Batch {
+    pub chunk_idx: usize,
+    pub out: Vec<u8>,
+    pub entries: Vec<BatchEntry>,
 }
 
-enum OutputKind {
-    Chunks(Vec<Vec<u8>>),
-    Merged { sinks: Vec<Sink>, refs: Vec<Ref> },
-}
-
-impl Output {
-    fn chunks(chunks: Vec<Vec<u8>>) -> Output {
-        Output {
-            kind: OutputKind::Chunks(chunks),
+impl Batch {
+    pub fn new(chunk_idx: usize, capacity: usize) -> Self {
+        Batch {
+            chunk_idx,
+            out: Vec::with_capacity(capacity.saturating_mul(12)),
+            entries: Vec::with_capacity(capacity),
         }
-    }
-
-    /// Write every line, including the terminating newline, to `w`.
-    pub fn write_all<W: std::io::Write>(&self, w: &mut W) -> std::io::Result<()> {
-        match &self.kind {
-            OutputKind::Chunks(chunks) => {
-                for c in chunks {
-                    w.write_all(c)?;
-                }
-            }
-            OutputKind::Merged { sinks, refs } => {
-                for r in refs {
-                    let sink = &sinks[r.sink as usize];
-                    let ent = &sink.entries[r.entry as usize];
-                    let ci = (ent.off >> CHUNK_SHIFT) as usize;
-                    let off = (ent.off & CHUNK_MASK) as usize;
-                    // Include the terminator: one write per line.
-                    w.write_all(&sink.chunks[ci][off..off + ent.len as usize + 1])?;
-                }
-            }
-        }
-        Ok(())
     }
 }
 
-/// De-duplicate one partition's refs.
-///
-/// Refs arrive in `(sink, entry)` order; the first occurrence of a key is kept
-/// and later ones dropped. Comments (`hash == 0`) are never de-duplicated.
-fn dedup_partition(refs: Vec<Ref>, sinks: &[Sink]) -> Vec<Ref> {
-    let mut keep: Vec<Ref> = Vec::with_capacity(refs.len());
-    let mut hashes = vec![0u64; 256];
-    let mut slots = vec![0u32; 256];
-    let mut mask = 255usize;
-    let mut filled = 0usize;
-    for r in refs {
-        let ent = sinks[r.sink as usize].entries[r.entry as usize];
-        if ent.hash == 0 {
-            keep.push(r);
-            continue;
-        }
-        let cur = entry_bytes(&sinks[r.sink as usize].chunks, &ent);
-        if filled * 10 >= hashes.len() * 7 {
-            rehash(&mut hashes, &mut slots, &mut mask, &keep, sinks);
-        }
-        let mut i = (ent.hash as usize) & mask;
-        let mut dup = false;
-        loop {
-            let h = hashes[i];
-            if h == 0 {
-                break;
-            }
-            if h == ent.hash {
-                let k = keep[(slots[i] - 1) as usize];
-                let kb = entry_bytes(
-                    &sinks[k.sink as usize].chunks,
-                    &sinks[k.sink as usize].entries[k.entry as usize],
-                );
-                if kb == cur {
-                    dup = true;
-                    break;
-                }
-            }
-            i = (i + 1) & mask;
-        }
-        if dup {
-            continue;
-        }
-        hashes[i] = ent.hash;
-        slots[i] = keep.len() as u32 + 1;
-        keep.push(r);
-        filled += 1;
-    }
-    keep
-}
-
-/// Rebuild a partition's probe table at twice the size.
-fn rehash(
-    hashes: &mut Vec<u64>,
-    slots: &mut Vec<u32>,
-    mask: &mut usize,
-    keep: &[Ref],
-    sinks: &[Sink],
-) {
-    let new_cap = hashes.len() * 2;
-    let mut nh = vec![0u64; new_cap];
-    let mut ns = vec![0u32; new_cap];
-    let nm = new_cap - 1;
-    for (k, r) in keep.iter().enumerate() {
-        let ent = sinks[r.sink as usize].entries[r.entry as usize];
-        if ent.hash == 0 {
-            continue;
-        }
-        let mut i = (ent.hash as usize) & nm;
-        while nh[i] != 0 {
-            i = (i + 1) & nm;
-        }
-        nh[i] = ent.hash;
-        ns[i] = k as u32 + 1;
-    }
-    *hashes = nh;
-    *slots = ns;
-    *mask = nm;
-}
-
-/// Merge per-worker sinks into a single writable output.
-///
-/// Phase 1 routes every entry to the partition that owns its hash - one linear
-/// pass that moves no bytes. Phase 2 de-duplicates each partition in parallel;
-/// because a key's copies all share a hash, they all land in the same partition
-/// and no cross-partition comparison is needed. The result references the
-/// original sinks, so merging never copies the output.
-///
-/// A single sink needs no merge at all and is handed back as its chunk arenas.
-pub fn merge(sinks: Vec<Sink>, partitions: usize) -> Output {
-    if sinks.len() <= 1 {
-        return Output::chunks(sinks.into_iter().next().map_or_else(Vec::new, |s| s.chunks));
-    }
-    // Size the partition set to the work available: one partition per ~4k
-    // entries, never more than the cores (or 16). Spawning the full 16 threads
-    // for a merge that only has a few hundred refs costs more in setup and
-    // join than the parallel dedup saves.
-    let cap = partitions.clamp(1, 16).next_power_of_two();
-    let total: usize = sinks.iter().map(|s| s.entries.len()).sum();
-    let p = (total / 4096).clamp(1, cap).next_power_of_two().min(cap);
-    let mask = (p - 1) as u64;
-
-    // Phase 1: route once. Comments go to partition 0 (they are never
-    // de-duplicated and must all be preserved).
-    let mut buckets: Vec<Vec<Ref>> = (0..p).map(|_| Vec::new()).collect();
-    for (si, sink) in sinks.iter().enumerate() {
-        for (ei, ent) in sink.entries.iter().enumerate() {
-            let pid = if ent.hash == 0 {
-                0
-            } else {
-                (ent.hash & mask) as usize
-            };
-            buckets[pid].push(Ref {
-                sink: si as u32,
-                entry: ei as u32,
-            });
-        }
+impl SinkTarget for Batch {
+    #[inline]
+    fn insert(&mut self, key: &[u8]) {
+        let off = self.out.len() as u64;
+        let len = u32::try_from(key.len()).expect("candidate exceeds 4 GiB");
+        let tag = (hash_key(key) as u32).max(1);
+        util::push_bytes(&mut self.out, key);
+        self.out.push(b'\n');
+        self.entries.push(BatchEntry { off, len, tag });
     }
 
-    // A single partition is the serial fold; don't pay for a thread to run it.
-    if p == 1 {
-        let refs = dedup_partition(buckets.pop().unwrap_or_default(), &sinks);
-        return Output {
-            kind: OutputKind::Merged { sinks, refs },
-        };
-    }
-
-    let mut parts: Vec<Vec<Ref>> = Vec::with_capacity(p);
-    std::thread::scope(|s| {
-        let mut handles = Vec::with_capacity(p);
-        for bucket in buckets {
-            let sinks = &sinks;
-            handles.push(s.spawn(move || dedup_partition(bucket, sinks)));
-        }
-        for h in handles {
-            match h.join() {
-                Ok(part) => parts.push(part),
-                Err(_) => panic!("merge worker panicked"),
-            }
-        }
-    });
-    let refs: Vec<Ref> = parts.into_iter().flatten().collect();
-    Output {
-        kind: OutputKind::Merged { sinks, refs },
+    #[inline]
+    fn push_line(&mut self, line: &[u8]) {
+        let off = self.out.len() as u64;
+        let len = u32::try_from(line.len()).expect("comment exceeds 4 GiB");
+        util::push_bytes(&mut self.out, line);
+        self.out.push(b'\n');
+        self.entries.push(BatchEntry { off, len, tag: 0 });
     }
 }
 
-/// Per-worker capacity hint for [`Sink::with_capacity`].
-///
-/// `total` is an upper bound on candidates (from [`estimate`]); only a fraction
-/// of them are unique. The hint is deliberately conservative - see the comment
-/// in the body - because oversizing the table costs more (cache, page faults)
-/// than the handful of doublings it avoids.
-pub fn worker_hint(total: u64, workers: usize) -> usize {
-    // Candidates are de-duplicated, so only a fraction become unique lines.
-    // The estimate is an upper bound on *candidates*, not on uniques, and
-    // measurements show that reserving for it is a net loss once tables stop
-    // fitting in cache. A small cap still avoids the first few doublings on
-    // medium runs without inflating per-worker RSS.
-    const MAX_HINT: u64 = 4096;
-    (total / 3 / workers.max(1) as u64).min(MAX_HINT) as usize
+#[inline]
+pub fn merge_batch(batch: &Batch, sink: &mut FinalSink) {
+    for entry in &batch.entries {
+        let off = entry.off as usize;
+        let len = entry.len as usize;
+        let line = &batch.out[off..off + len];
+        if entry.tag == 0 {
+            sink.push_line(line);
+        } else {
+            sink.insert_hashed(line, entry.tag);
+        }
+    }
 }
 
 pub struct GenOpts {
@@ -429,24 +203,25 @@ impl GenOpts {
     }
 }
 
-/// Per-worker emitter: applies case folding and the suffix, then de-duplicates.
-pub struct Emitter {
-    sink: Sink,
+/// Emitter: applies case folding and the suffix, then writes to the underlying SinkTarget.
+pub struct Emitter<'a, S: SinkTarget> {
+    sink: S,
     key: Vec<u8>,
     tmp: Vec<u8>,
     case_insensitive: bool,
     suffix: Option<Vec<u8>>,
+    _opts: &'a GenOpts,
 }
 
-impl Emitter {
-    /// `expected` is the per-worker unique-line hint (see [`worker_hint`]).
-    pub fn with_capacity(opts: &GenOpts, expected: usize) -> Emitter {
+impl<'a, S: SinkTarget> Emitter<'a, S> {
+    pub fn new(opts: &'a GenOpts, sink: S) -> Emitter<'a, S> {
         Emitter {
-            sink: Sink::with_capacity(expected),
+            sink,
             key: Vec::with_capacity(64),
             tmp: Vec::new(),
             case_insensitive: opts.case_insensitive,
             suffix: opts.suffix.clone(),
+            _opts: opts,
         }
     }
 
@@ -469,11 +244,7 @@ impl Emitter {
     }
 
     /// Emit a string that a static template has already produced in final,
-    /// case-folded form (see `fmt::resolve`).
-    ///
-    /// The uppercase/non-ASCII guard keeps this an optimization rather than a
-    /// semantic shortcut: anything that is not known-lowercase falls back to
-    /// [`Self::emit`], which reproduces Ruby's `downcase!` exactly.
+    /// case-folded form (see `fmt::resolve_string_lower`).
     #[inline]
     pub fn emit_lower(&mut self, s: &[u8]) {
         if s.iter().any(|&b| b.is_ascii_uppercase() || b >= 0x80) {
@@ -493,10 +264,6 @@ impl Emitter {
 
     /// Emit a string already known to be lowercase ASCII, skipping the
     /// uppercase/non-ASCII guard in [`Self::emit_lower`].
-    ///
-    /// Only call this when the resolved candidate came from fields that passed
-    /// `field_props` (no uppercase or non-ASCII bytes) and a non-strict
-    /// template (whose literals are `.`), or from an equivalent scan.
     #[inline]
     pub fn emit_known_lower(&mut self, s: &[u8]) {
         match &self.suffix {
@@ -510,7 +277,7 @@ impl Emitter {
         }
     }
 
-    fn comment(&mut self, name: &str, count: Option<u64>) {
+    pub fn comment(&mut self, name: &str, count: Option<u64>) {
         self.tmp.clear();
         self.tmp.extend_from_slice(b"# Plugin: ");
         self.tmp.extend_from_slice(name.as_bytes());
@@ -521,15 +288,11 @@ impl Emitter {
         self.sink.push_line(&self.tmp);
     }
 
-    fn comment_raw(&mut self, line: &[u8]) {
+    pub fn comment_raw(&mut self, line: &[u8]) {
         self.sink.push_line(line);
     }
 
-    pub fn finish(self) -> Output {
-        Output::chunks(self.sink.chunks)
-    }
-
-    pub fn into_sink(self) -> Sink {
+    pub fn into_sink(self) -> S {
         self.sink
     }
 }
@@ -539,7 +302,6 @@ pub struct Scratch {
     pub resolved: Vec<u8>,
     pub tmp: Vec<u8>,
     pub chars: Vec<u8>,
-    pub prep: fmt::Prep,
 }
 
 impl Scratch {
@@ -548,7 +310,6 @@ impl Scratch {
             resolved: Vec::with_capacity(64),
             tmp: Vec::with_capacity(256),
             chars: Vec::with_capacity(256),
-            prep: fmt::Prep::default(),
         }
     }
 }
@@ -666,19 +427,24 @@ pub fn all_outputs<N: NameFields + ?Sized>(
 }
 
 /// Generate every candidate for one person into the emitter.
-pub fn gen_person<N: NameFields + ?Sized>(
+pub fn gen_person<N: NameFields + ?Sized, S: SinkTarget>(
     plugins: &[Plugin],
     name: &N,
     ctx: &Ctx,
     opts: &GenOpts,
-    em: &mut Emitter,
+    em: &mut Emitter<'_, S>,
     sc: &mut Scratch,
+    present_mask: u8,
 ) -> Result<(), String> {
-    // Item 1: memoize every casing of every field once per person instead of
-    // recomputing them inside each template's resolution.
-    let need_title = !opts.case_insensitive || plugins.iter().any(|p| p.strict);
-    let pn = fmt::prepare(name, &mut sc.prep, need_title);
+    // One scan per person replaces a scan of every field in every template.
+    let (plain, clean) = fmt::field_props(name);
     for p in plugins {
+        if !opts.substitute && (present_mask & p.required_mask) != p.required_mask {
+            if opts.verbose {
+                em.comment(&p.name, None);
+            }
+            continue;
+        }
         match &p.kind {
             PluginKind::TruncFirstLast8 => {
                 if opts.verbose {
@@ -691,7 +457,7 @@ pub fn gen_person<N: NameFields + ?Sized>(
                     let end = util::nth_char_boundary(&sc.chars, 8);
                     sc.tmp.clear();
                     sc.tmp.extend_from_slice(&sc.chars[..end]);
-                    if pn.plain {
+                    if plain {
                         em.emit_known_lower(&sc.tmp);
                     } else {
                         em.emit(&sc.tmp);
@@ -708,7 +474,7 @@ pub fn gen_person<N: NameFields + ?Sized>(
                     sc.tmp.clear();
                     sc.tmp.extend_from_slice(&f[..fe]);
                     sc.tmp.extend_from_slice(&l[..le]);
-                    if pn.plain {
+                    if plain {
                         em.emit_known_lower(&sc.tmp);
                     } else {
                         em.emit(&sc.tmp);
@@ -716,52 +482,21 @@ pub fn gen_person<N: NameFields + ?Sized>(
                 }
             }
             PluginKind::Format { segs, lits } => {
-                // Item 5: with substitutions off, a template that is guaranteed
-                // to contain a token - either one of its own `Seg::Tok` segments
-                // or a missing required field - is skipped without resolving or
-                // scanning the result.
-                if !opts.substitute && (p.has_tok || (p.required & !pn.present) != 0) {
-                    if opts.verbose {
-                        em.comment(&p.name, None);
-                    }
-                    continue;
-                }
+                // The built-in templates have no letters in their literals, so
+                // a case-insensitive run can resolve straight to final form and
+                // skip `Emitter::emit`'s second case-folding pass.
                 let lower_ready = opts.case_insensitive && !p.strict;
-                let mode = if lower_ready {
-                    fmt::Mode::LowerFold
-                } else {
-                    fmt::Mode::Normal
-                };
-                // Fast path (items 1 + 2 + 6): no token can appear in the
-                // resolved string (no `Seg::Tok`, no missing field, no `%` in
-                // literals or field values), so the single candidate is built
-                // straight from the memoized segments, stripped in place, and
-                // de-duplicated without a tokenize pass or a temporary copy.
-                let fast = !p.strict
-                    && !p.has_tok
-                    && !p.lit_pct
-                    && !pn.has_pct
-                    && (p.required & !pn.present) == 0;
-                if fast {
-                    fmt::resolve(segs, lits, &pn, mode, &mut sc.resolved);
-                    if opts.verbose {
-                        em.comment(&p.name, Some(1));
-                    }
-                    if !pn.clean {
-                        util::strip_spaces_and_apostrophes(&mut sc.resolved);
-                    }
-                    if pn.plain {
-                        em.emit_known_lower(&sc.resolved);
-                    } else if lower_ready {
-                        em.emit_lower(&sc.resolved);
+                if lower_ready {
+                    if plain {
+                        fmt::resolve_string_lower_raw(segs, lits, name, &mut sc.resolved);
                     } else {
-                        em.emit(&sc.resolved);
+                        fmt::resolve_string_lower(segs, lits, name, &mut sc.resolved);
                     }
-                    continue;
+                } else {
+                    fmt::resolve_string(segs, lits, name, &mut sc.resolved);
                 }
-                // Faithful slow path: custom formats and templates whose
-                // resolved string may contain expansion tokens.
-                fmt::resolve(segs, lits, &pn, mode, &mut sc.resolved);
+                // With substitutions off (the default) a template that still
+                // contains a token is skipped outright.
                 let occ = if opts.substitute {
                     fmt::tokenize(&sc.resolved)
                 } else if fmt::has_token(&sc.resolved) {
@@ -805,10 +540,10 @@ pub fn gen_person<N: NameFields + ?Sized>(
                     }
                     let limit = opts.limit(total);
                     if occ.is_empty() && limit > 0 {
-                        if !pn.clean {
+                        if !clean {
                             util::strip_spaces_and_apostrophes(&mut sc.resolved);
                         }
-                        if pn.plain {
+                        if plain {
                             em.emit_known_lower(&sc.resolved);
                         } else if lower_ready {
                             em.emit_lower(&sc.resolved);
@@ -830,58 +565,32 @@ pub fn gen_person<N: NameFields + ?Sized>(
 }
 
 #[inline]
-fn gen_named<N: NameFields + ?Sized>(
+fn gen_named<N: NameFields + ?Sized, S: SinkTarget>(
     plugins: &[Plugin],
     name: &N,
     ctx: &Ctx,
     opts: &GenOpts,
-    em: &mut Emitter,
+    em: &mut Emitter<'_, S>,
     sc: &mut Scratch,
+    present_mask: u8,
 ) -> Result<(), String> {
     if opts.verbose {
         em.comment_raw(&pp_line(name));
     }
-    gen_person(plugins, name, ctx, opts, em, sc)
+    gen_person(plugins, name, ctx, opts, em, sc, present_mask)
 }
 
-pub fn gen_people(
-    people: &[Person],
+pub fn gen_people<'a, S: SinkTarget>(
+    people: &[Person<'a>],
     plugins: &[Plugin],
     ctx: &Ctx,
     opts: &GenOpts,
-    em: &mut Emitter,
+    em: &mut Emitter<'_, S>,
     sc: &mut Scratch,
 ) -> Result<(), String> {
     for p in people {
         let name = NameRef::from_person(p);
-        gen_named(plugins, &name, ctx, opts, em, sc)?;
-    }
-    Ok(())
-}
-
-/// Generate for borrowed input rows (the `-i` path).
-///
-/// `head` holds the positional people (always tiny) and is emitted first; the
-/// rows borrow their fields straight out of `data`, so no `Person` or per-field
-/// `Vec` is allocated for the (potentially huge) file.
-#[allow(clippy::too_many_arguments)]
-pub fn gen_rows(
-    data: &[u8],
-    rows: &[Row],
-    head: &[Person],
-    plugins: &[Plugin],
-    ctx: &Ctx,
-    opts: &GenOpts,
-    em: &mut Emitter,
-    sc: &mut Scratch,
-) -> Result<(), String> {
-    for p in head {
-        let name = NameRef::from_person(p);
-        gen_named(plugins, &name, ctx, opts, em, sc)?;
-    }
-    for row in rows {
-        let name = NameRef::from_ranges(data, row);
-        gen_named(plugins, &name, ctx, opts, em, sc)?;
+        gen_named(plugins, &name, ctx, opts, em, sc, name.present_mask)?;
     }
     Ok(())
 }
@@ -894,28 +603,23 @@ pub struct AutoNames<'a> {
 }
 
 /// Generate the `--auto` cross-product for a slice of the family-name range.
-///
-/// `head` (the positional people plus the empty `{}` sentinel the original
-/// keeps in `-a` mode) is generated once, by the worker that receives the first
-/// family chunk. Names are borrowed from the two dictionaries, so no `Person`
-/// or per-field `Vec` is allocated per combination.
-pub fn gen_auto(
-    head: &[Person],
-    names: AutoNames,
+pub fn gen_auto<'a, S: SinkTarget>(
+    head: &[Person<'a>],
+    names: AutoNames<'a>,
     plugins: &[Plugin],
     ctx: &Ctx,
     opts: &GenOpts,
-    em: &mut Emitter,
+    em: &mut Emitter<'_, S>,
     sc: &mut Scratch,
 ) -> Result<(), String> {
     for p in head {
         let name = NameRef::from_person(p);
-        gen_named(plugins, &name, ctx, opts, em, sc)?;
+        gen_named(plugins, &name, ctx, opts, em, sc, name.present_mask)?;
     }
     for fam in names.family {
         for giv in names.given {
             let name = NameRef::from_first_last(giv.as_deref(), fam.as_deref());
-            gen_named(plugins, &name, ctx, opts, em, sc)?;
+            gen_named(plugins, &name, ctx, opts, em, sc, name.present_mask)?;
         }
     }
     Ok(())
@@ -950,65 +654,21 @@ fn per_person_cost<N: NameFields + ?Sized>(
 }
 
 /// Rough upper bound on the number of generated candidates.
-pub fn estimate(people: &[Person], plugins: &[Plugin], ctx: &Ctx, opts: &GenOpts) -> u64 {
+pub fn estimate<'a>(people: &[Person<'a>], plugins: &[Plugin], ctx: &Ctx, opts: &GenOpts) -> u64 {
     let n_people = people.len().max(1) as u64;
-    // Sample a real row: empty/sentinel rows expand missing fields to the whole
-    // dictionaries and would wildly overestimate the per-person cost.
-    let sample = people
+    let sample: Person<'a> = people
         .iter()
         .find(|p| p.iter().any(|x| x.is_some()))
-        .cloned()
+        .copied()
         .unwrap_or_default();
     let name = NameRef::from_person(&sample);
     per_person_cost(&name, plugins, ctx, opts).saturating_mul(n_people)
 }
 
-/// Estimate for the borrowed-row `-i` path.
-///
-/// Samples one row that has at least one present field, falling back to the
-/// empty person (which expands missing fields to the whole dictionaries) when
-/// every row is blank. The positional head is counted separately and only when
-/// it is non-empty, so a bare `-i file` run is not inflated by a phantom
-/// sentinel.
-pub fn estimate_file(
-    head: &[Person],
-    data: &[u8],
-    rows: &[Row],
-    plugins: &[Plugin],
-    ctx: &Ctx,
-    opts: &GenOpts,
-) -> u64 {
-    let n_head = head.len() as u64;
-    let n_rows = rows.len() as u64;
-    if n_rows == 0 {
-        return if n_head == 0 {
-            0
-        } else {
-            estimate(head, plugins, ctx, opts)
-        };
-    }
-    let sample = rows
-        .iter()
-        .find(|r| r.iter().any(|(a, b)| a != b))
-        .map(|r| NameRef::from_ranges(data, r))
-        .unwrap_or_default();
-    let row_cost = per_person_cost(&sample, plugins, ctx, opts);
-    let head_cost = if n_head == 0 {
-        0
-    } else {
-        estimate(head, plugins, ctx, opts)
-    };
-    head_cost.saturating_add(n_rows.saturating_mul(row_cost))
-}
-
 /// Estimate for the streamed `--auto` cross-product.
-///
-/// The sentinel (which expands missing fields to the whole dictionaries) and
-/// the concrete `(given, family)` pairs have very different costs, so they are
-/// counted separately.
-pub fn estimate_auto(
-    head: &[Person],
-    names: AutoNames,
+pub fn estimate_auto<'a>(
+    head: &[Person<'a>],
+    names: AutoNames<'a>,
     plugins: &[Plugin],
     ctx: &Ctx,
     opts: &GenOpts,
@@ -1032,4 +692,46 @@ pub fn estimate_auto(
     (head.len() as u64)
         .saturating_mul(head_cost)
         .saturating_add(cross)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dedupe_compares_bytes_on_hash_collisions_and_survives_growth() {
+        let mut sink = FinalSink::new();
+        let mut expected = Vec::new();
+        // More than the initial table's load limit, with deliberately shared
+        // tags and bucket collisions. Different strings must remain distinct.
+        for i in 0u32..12_000 {
+            let key = format!("user-{i}");
+            let tag = (i / 2) * 128;
+            sink.insert_hashed(key.as_bytes(), tag);
+            expected.extend_from_slice(key.as_bytes());
+            expected.push(b'\n');
+        }
+        for i in (0u32..12_000).rev() {
+            let key = format!("user-{i}");
+            sink.insert_hashed(key.as_bytes(), (i / 2) * 128);
+        }
+        assert_eq!(sink.finish(), expected);
+    }
+
+    #[test]
+    fn batch_comments_are_not_deduplicated_with_candidates() {
+        let mut sink = FinalSink::new();
+        for idx in 0..3 {
+            let mut batch = Batch::new(idx, 4);
+            batch.push_line(b"# comment");
+            batch.insert(b"anna.key");
+            batch.insert(b"# comment");
+            batch.insert(b"anna.key");
+            merge_batch(&batch, &mut sink);
+        }
+        assert_eq!(
+            sink.finish(),
+            b"# comment\nanna.key\n# comment\n# comment\n# comment\n"
+        );
+    }
 }

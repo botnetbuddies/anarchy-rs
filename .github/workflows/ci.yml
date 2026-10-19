@@ -70,7 +70,7 @@ jobs:
       - name: Harness self-test
         run: python3 tests/parity/run_parity.py --selftest
 
-      - name: Parity gate (435 cases against the Ruby oracle)
+      - name: Parity gate against the Ruby oracle
         run: python3 tests/parity/run_parity.py
 
       - name: Upload the static binary

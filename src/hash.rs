@@ -1,9 +1,9 @@
 //! Selectable 64-bit hash for candidate keys.
 //!
-//! The full 64 bits are stored per entry and used for probing, table growth and
-//! merge partitioning; the low bits also select the bucket (`hash & mask`).
-//! That makes the hash a pure per-candidate cost, with no effect on output, so
-//! it is worth choosing empirically.
+//! Only the low 32 bits matter to the de-duplicator: they are both the bucket
+//! index (`tag & mask`) and the probe tag, and each [`crate::engine::FinalSink`]
+//! entry stores them. That makes the hash a pure per-candidate cost, with no
+//! effect on output, so it is worth choosing empirically.
 //!
 //! The default is `hash-fx`. To benchmark an alternative:
 //!

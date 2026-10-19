@@ -8,7 +8,7 @@ Thanks for taking a look. This project has one non-negotiable rule:
 
 ## Ground rules
 
-* Preserve the quirks documented in `README.md` ("Preserved quirks"). They are
+* Preserve the quirks documented in [`COMPATIBILITY.md`](COMPATIBILITY.md#preserved-quirks). They are
   part of the output contract.
 * Keep the program safe Rust. `unsafe` is allowed only in an isolated,
   profiler-justified hot spot with a written safety argument (there is currently
@@ -28,7 +28,7 @@ python3 tests/parity/run_parity.py
 ```
 
 The parity gate must be green. It runs the original Ruby script and the Rust
-binary over 435 cases and compares output sets; see `tests/parity/run_parity.py`
+binary over 444 cases and compares output sets; see `tests/parity/run_parity.py`
 for how the oracle is chosen (stock Ruby where it works, otherwise the
 pre-3.2 `Object#=~` shim).
 
@@ -47,24 +47,12 @@ make bench
 python3 bench/run_bench.py --threads 1   # apples-to-apples single core
 ```
 
-Record meaningful changes in `PERFORMANCE.md`, including the profile output that
-justified them.
-
-## Publishing
-
-The repository is ready to push as-is:
-
-```sh
-git init -b main          # already initialised if you cloned
-git remote add origin git@github.com:OWNER/REPO.git
-git push -u origin main
-```
-
-Afterwards, replace `OWNER/REPO` in the badge URLs at the top of `README.md`.
+Record meaningful changes in `PERFORMANCE.md`, with the workload, build settings
+and measurements that justify them.
 
 CI (`.github/workflows/ci.yml`) runs on every push and pull request: formatting,
 clippy, unit tests, a static-musl build, the static-linking assertions, a smoke
-test, and the full 435-case parity gate.
+test, and the full parity gate.
 
 ## Releasing
 

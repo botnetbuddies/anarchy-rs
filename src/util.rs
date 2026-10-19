@@ -49,9 +49,9 @@ pub fn strip(s: &[u8]) -> &[u8] {
 /// Delimiter used when splitting an input file.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Delim {
-    /// `String#split(" ")` - awk-style whitespace mode.
+    /// `String#split(" ")` — awk-style whitespace mode.
     Space,
-    /// `String#split(",")` / `String#split("\t")` - literal separator.
+    /// `String#split(",")` / `String#split("\t")` — literal separator.
     Byte(u8),
 }
 
@@ -101,6 +101,68 @@ pub fn ruby_split(s: &[u8], d: Delim) -> Vec<(usize, usize)> {
         }
     }
     out
+}
+
+/// Stack-buffer variant of `ruby_split`; `None` requests the wide-row fallback.
+#[inline]
+pub fn ruby_split_buf<'a>(
+    s: &[u8],
+    d: Delim,
+    buf: &'a mut [(usize, usize); 16],
+) -> Option<&'a [(usize, usize)]> {
+    let mut count = 0usize;
+    match d {
+        Delim::Space => {
+            let mut i = 0usize;
+            while i < s.len() {
+                while i < s.len() && is_split_ws(s[i]) {
+                    i += 1;
+                }
+                if i >= s.len() {
+                    break;
+                }
+                let start = i;
+                while i < s.len() && !is_split_ws(s[i]) {
+                    i += 1;
+                }
+                if count == buf.len() {
+                    return None;
+                }
+                buf[count] = (start, i);
+                count += 1;
+            }
+        }
+        Delim::Byte(sep) => {
+            if s.is_empty() {
+                return Some(&buf[..0]);
+            }
+            let mut start = 0usize;
+            for (i, &b) in s.iter().enumerate() {
+                if b == sep {
+                    if count == buf.len() {
+                        return None;
+                    }
+                    buf[count] = (start, i);
+                    count += 1;
+                    start = i + 1;
+                }
+            }
+            if count == buf.len() {
+                return None;
+            }
+            buf[count] = (start, s.len());
+            count += 1;
+            while count > 0 {
+                let (a, b) = buf[count - 1];
+                if a == b {
+                    count -= 1;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    Some(&buf[..count])
 }
 
 #[inline]
@@ -273,7 +335,7 @@ pub fn upcase_then_downcase_into(s: &[u8], out: &mut Vec<u8>) -> bool {
     let end = nth_char_boundary(text.as_bytes(), 1);
     let first = &text[..end];
     let rest = &text[end..];
-    // `downcase(upcase(first))` - not always `downcase(first)` (e.g. ß -> ss).
+    // `downcase(upcase(first))` — not always `downcase(first)` (e.g. ß -> ss).
     let first_up = first.to_uppercase();
     out.extend_from_slice(first_up.to_lowercase().as_bytes());
     // `downcase(downcase(rest)) == downcase(rest)`.

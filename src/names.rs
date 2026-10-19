@@ -10,8 +10,6 @@ pub const LASTINITIAL: usize = 3;
 pub const MIDDLENAME: usize = 4;
 pub const MIDDLEINITIAL: usize = 5;
 
-pub type Row = [(u32, u32); 6];
-
 /// The six name fields after `Name#init` has run.
 #[derive(Clone, Default)]
 pub struct Name {
@@ -71,6 +69,7 @@ pub struct NameRef<'a> {
     pub firstinitial: Option<&'a [u8]>,
     pub lastinitial: Option<&'a [u8]>,
     pub middleinitial: Option<&'a [u8]>,
+    pub present_mask: u8,
 }
 
 impl<'a> NameRef<'a> {
@@ -82,12 +81,21 @@ impl<'a> NameRef<'a> {
     pub fn from_first_last(first: Option<&'a [u8]>, last: Option<&'a [u8]>) -> NameRef<'a> {
         let first = first.filter(|s| !s.is_empty());
         let last = last.filter(|s| !s.is_empty());
+        let mut mask = 0u8;
+        if first.is_some() {
+            mask |= (1 << FIRSTNAME) | (1 << FIRSTINITIAL);
+        }
+        if last.is_some() {
+            mask |= (1 << LASTNAME) | (1 << LASTINITIAL);
+        }
         NameRef {
             firstname: first,
             lastname: last,
             firstinitial: first.map(first_char_slice),
             lastinitial: last.map(first_char_slice),
-            ..NameRef::default()
+            middlename: None,
+            middleinitial: None,
+            present_mask: mask,
         }
     }
 
@@ -97,8 +105,8 @@ impl<'a> NameRef<'a> {
     ///
     /// The hot input-file path uses this to avoid six `Vec` clones per row.
     #[inline]
-    pub fn from_person(p: &'a Person) -> NameRef<'a> {
-        let nz = |v: &'a Option<Vec<u8>>| v.as_deref().filter(|s| !s.is_empty());
+    pub fn from_person(p: &Person<'a>) -> NameRef<'a> {
+        let nz = |v: &Option<&'a [u8]>| v.filter(|s| !s.is_empty());
         let firstname = nz(&p[FIRSTNAME]);
         let middlename = nz(&p[MIDDLENAME]);
         let lastname = nz(&p[LASTNAME]);
@@ -116,45 +124,25 @@ impl<'a> NameRef<'a> {
         } else {
             lastname.map(first_char_slice)
         };
-        NameRef {
-            firstname,
-            lastname,
-            middlename,
-            firstinitial,
-            middleinitial,
-            lastinitial,
+        let mut mask = 0u8;
+        if firstname.is_some() {
+            mask |= 1 << FIRSTNAME;
         }
-    }
-
-    #[inline]
-    pub fn from_ranges(data: &'a [u8], row: &Row) -> NameRef<'a> {
-        let nz = |(a, b): (u32, u32)| {
-            if a == b {
-                None
-            } else {
-                let s = &data[a as usize..b as usize];
-                if s.is_empty() {
-                    None
-                } else {
-                    Some(s)
-                }
-            }
-        };
-        let firstname = nz(row[FIRSTNAME]);
-        let middlename = nz(row[MIDDLENAME]);
-        let lastname = nz(row[LASTNAME]);
-        let firstinitial_col = nz(row[FIRSTINITIAL]);
-        let firstinitial = firstinitial_col.or_else(|| firstname.map(first_char_slice));
-        let middleinitial = if row[MIDDLEINITIAL].0 != row[MIDDLEINITIAL].1 {
-            firstinitial_col
-        } else {
-            middlename.map(first_char_slice)
-        };
-        let lastinitial = if row[LASTINITIAL].0 != row[LASTINITIAL].1 {
-            firstinitial_col
-        } else {
-            lastname.map(first_char_slice)
-        };
+        if lastname.is_some() {
+            mask |= 1 << LASTNAME;
+        }
+        if firstinitial.is_some() {
+            mask |= 1 << FIRSTINITIAL;
+        }
+        if lastinitial.is_some() {
+            mask |= 1 << LASTINITIAL;
+        }
+        if middlename.is_some() {
+            mask |= 1 << MIDDLENAME;
+        }
+        if middleinitial.is_some() {
+            mask |= 1 << MIDDLEINITIAL;
+        }
         NameRef {
             firstname,
             lastname,
@@ -162,6 +150,7 @@ impl<'a> NameRef<'a> {
             firstinitial,
             middleinitial,
             lastinitial,
+            present_mask: mask,
         }
     }
 }
@@ -202,7 +191,7 @@ impl NameFields for NameRef<'_> {
 ///
 /// `None` means the field was absent or the empty string (the original maps
 /// `""` to `nil` before doing anything else).
-pub type Person = [Option<Vec<u8>>; 6];
+pub type Person<'a> = [Option<&'a [u8]>; 6];
 
 /// Ruby `String#[]` for a single-character range: `s[0..0]`.
 fn first_char(s: &[u8]) -> Vec<u8> {
@@ -217,10 +206,10 @@ impl Name {
     /// overwrites the incremented initial with `s[:firstinitial]` (the raw
     /// column value), not with the supplied initial. This is a copy/paste bug
     /// in the original and is reproduced verbatim.
-    pub fn init(p: &Person) -> Name {
+    pub fn init(p: &Person<'_>) -> Name {
         // The original's very first step maps every empty column value to nil.
-        let nz = |v: &Option<Vec<u8>>| -> Option<Vec<u8>> {
-            v.as_ref().filter(|s| !s.is_empty()).cloned()
+        let nz = |v: &Option<&[u8]>| -> Option<Vec<u8>> {
+            v.filter(|s| !s.is_empty()).map(|s| s.to_vec())
         };
         let p = [
             nz(&p[FIRSTNAME]),
@@ -298,18 +287,13 @@ fn contains(hay: &[u8], needle: &[u8]) -> bool {
     hay.windows(needle.len()).any(|w| w == needle)
 }
 
-pub struct LoadedNames {
-    /// The whole file, with every normalized field appended in place.
-    pub data: Vec<u8>,
-    /// One entry per kept row, six `(start, end)` ranges into `data` indexed by
-    /// the `FIRSTNAME`…`MIDDLEINITIAL` constants. `(0, 0)` means the field was
-    /// absent or empty.
-    pub rows: Vec<Row>,
+pub struct LoadedNames<'a> {
+    pub people: Vec<Person<'a>>,
     /// Lines printed by the original while parsing unknown column headers.
     pub stdout: Vec<u8>,
 }
 
-/// Ruby `File.readlines` - split on `\n`, keeping the terminator.
+/// Ruby `File.readlines` — split on `\n`, keeping the terminator.
 fn readlines(data: &[u8]) -> Vec<&[u8]> {
     let mut out = Vec::new();
     let mut start = 0usize;
@@ -325,59 +309,33 @@ fn readlines(data: &[u8]) -> Vec<&[u8]> {
     out
 }
 
-/// Ruby `String#strip` as a `(start, end)` range.
-#[inline]
-fn strip_range(s: &[u8]) -> (usize, usize) {
-    let mut a = 0usize;
-    let mut b = s.len();
-    while a < b && util::is_strip_ws(s[a]) {
-        a += 1;
+/// `load_names_list` from the original.
+pub fn load_names_list<'a>(data: &'a mut Vec<u8>) -> Result<LoadedNames<'a>, String> {
+    if data.is_empty() {
+        return Ok(LoadedNames {
+            people: Vec::new(),
+            stdout: Vec::new(),
+        });
     }
-    while b > a && util::is_strip_ws(s[b - 1]) {
-        b -= 1;
-    }
-    (a, b)
-}
 
-/// `load_names_list` from the original, without allocating per field.
-///
-/// The file is parsed into `(start, end)` ranges into a single buffer; the
-/// only bytes appended are the normalized (downcased, stripped) field values,
-/// which is what the original would have stored in each `Person` anyway.
-/// Callers that need owned [`Person`]s (the `--auto` cross-product's head)
-/// call [`rows_to_people`].
-pub fn load_names_list(data: Vec<u8>) -> Result<LoadedNames, String> {
-    // `readlines` yields contiguous, non-overlapping slices, so record them as
-    // `(start, end)` offsets into `data`.
-    let mut line_ranges: Vec<(usize, usize)> = Vec::new();
-    let mut start = 0usize;
-    for (i, &b) in data.iter().enumerate() {
-        if b == b'\n' {
-            line_ranges.push((start, i + 1));
-            start = i + 1;
-        }
-    }
-    if start < data.len() {
-        line_ranges.push((start, data.len()));
-    }
-    let (fs, fe) = line_ranges.first().copied().unwrap_or((0, 0));
-    let first_line: &[u8] = &data[fs..fe];
-
-    // The original inserts a synthetic `firstname lastname` header when the
-    // first line is not one; the delimiter is then detected from *that* header
-    // (always space), and the first real line is data. When a header is
-    // present, that header is parsed.
-    let synthetic = !looks_like_header(first_line);
-    let first: &[u8] = if synthetic {
-        b"firstname lastname"
-    } else {
-        first_line
+    let first_nl = data.iter().position(|&b| b == b'\n');
+    let first_line_len = match first_nl {
+        Some(pos) => pos + 1,
+        None => data.len(),
     };
-    let delim = if first.contains(&b'\t') {
+    let has_header = looks_like_header(&data[..first_line_len]);
+    let (first_line_buf, data_start) = if has_header {
+        (data[..first_line_len].to_vec(), first_line_len)
+    } else {
+        (b"firstname lastname".to_vec(), 0)
+    };
+
+    let first_line = first_line_buf.as_slice();
+    let delim = if first_line.contains(&b'\t') {
         Delim::Byte(b'\t')
-    } else if first.contains(&b',') {
+    } else if first_line.contains(&b',') {
         Delim::Byte(b',')
-    } else if first.contains(&b' ') {
+    } else if first_line.contains(&b' ') {
         Delim::Space
     } else {
         return Err("Cannot auto-detect delimiter.".to_string());
@@ -386,13 +344,13 @@ pub fn load_names_list(data: Vec<u8>) -> Result<LoadedNames, String> {
     // Header parsing.
     let mut columns: Vec<Option<usize>> = Vec::new();
     let mut stdout: Vec<u8> = Vec::new();
-    for (i, (a, b)) in util::ruby_split(first, delim).iter().enumerate() {
-        let mut header = first[*a..*b].to_vec();
+    for (i, &(a, b)) in util::ruby_split(first_line, delim).iter().enumerate() {
+        let mut header = first_line[a..b].to_vec();
         for byte in header.iter_mut() {
             *byte = byte.to_ascii_lowercase();
         }
-        let header = util::strip(&header).to_vec();
-        match column_index(&header) {
+        let header = util::strip(&header);
+        match column_index(header) {
             Some(idx) => {
                 if i >= columns.len() {
                     columns.resize(i + 1, None);
@@ -401,74 +359,61 @@ pub fn load_names_list(data: Vec<u8>) -> Result<LoadedNames, String> {
             }
             None => {
                 stdout.extend_from_slice(b"# Ignored unknown column: ");
-                stdout.extend_from_slice(&header);
+                stdout.extend_from_slice(header);
                 stdout.push(b'\n');
             }
         }
     }
 
-    // Only the normalized field bytes are kept; the original file buffer is
-    // dropped when this function returns.
-    let mut owned: Vec<u8> = Vec::with_capacity(data.len() / 2 + 64);
-    let mut rows: Vec<Row> = Vec::new();
-    // With a synthetic header nothing is skipped (the first line is data);
-    // with a real header, that header line is skipped.
-    let skip = if synthetic { 0 } else { 1 };
-    for &(ls, le) in line_ranges.iter().skip(skip) {
-        let line = &data[ls..le];
-        if line == b"\n" {
+    // Keep ASCII input in its original allocation. Full Unicode lowercasing
+    // can change byte lengths, so finish that transformation before borrowing.
+    if !util::ascii_lowercase_in_place(&mut data[data_start..]) {
+        let lower = util::downcase(&data[data_start..]);
+        data.truncate(data_start);
+        data.extend_from_slice(&lower);
+    }
+
+    let data_ref: &'a [u8] = &*data;
+    let mut people: Vec<Person<'a>> = Vec::new();
+    let mut field_buf = [(0usize, 0usize); 16];
+    let mut line_start = data_start;
+    let total_len = data_ref.len();
+
+    while line_start < total_len {
+        let line_end = match data_ref[line_start..].iter().position(|&b| b == b'\n') {
+            Some(pos) => line_start + pos + 1,
+            None => total_len,
+        };
+        let line = &data_ref[line_start..line_end];
+        line_start = line_end;
+
+        if line == b"\n" || line == b"\r\n" {
             continue;
         }
-        let fields = util::ruby_split(line, delim);
+        let overflow;
+        let fields = match util::ruby_split_buf(line, delim, &mut field_buf) {
+            Some(fields) => fields,
+            None => {
+                overflow = util::ruby_split(line, delim);
+                overflow.as_slice()
+            }
+        };
         if fields.is_empty() {
             continue;
         }
-        let mut row: Row = [(0, 0); 6];
-        for (i, (a, b)) in fields.iter().enumerate() {
-            let idx = match columns.get(i).copied().flatten() {
-                Some(idx) => idx,
-                None => continue,
-            };
-            // Ruby downcases the value first, then strips it.
-            let (sa, sb) = strip_range(&line[*a..*b]);
-            if sa == sb {
-                row[idx] = (0, 0);
-                continue;
-            }
-            let start = owned.len() as u32;
-            util::downcase_into(&line[*a + sa..*a + sb], &mut owned);
-            row[idx] = (start, owned.len() as u32);
-        }
-        rows.push(row);
-    }
-
-    Ok(LoadedNames {
-        data: owned,
-        rows,
-        stdout,
-    })
-}
-
-/// Rebuild owned [`Person`]s from borrowed rows.
-///
-/// Only used for the `--auto` head, which is tiny; the hot `-i` path works
-/// straight off the ranges.
-pub fn rows_to_people(data: &[u8], rows: &[Row]) -> Vec<Person> {
-    let mut out: Vec<Person> = Vec::with_capacity(rows.len());
-    for row in rows {
-        let mut p: Person = Default::default();
-        for idx in 0..6 {
-            let (a, b) = row[idx];
-            if a != b {
-                let s = &data[a as usize..b as usize];
-                if !s.is_empty() {
-                    p[idx] = Some(s.to_vec());
-                }
+        let mut person: Person<'a> = [None; 6];
+        for (i, &(a, b)) in fields.iter().enumerate() {
+            let v = &line[a..b];
+            let stripped = util::strip(v);
+            let idx = columns.get(i).copied().flatten();
+            if let Some(idx) = idx {
+                person[idx] = (!stripped.is_empty()).then_some(stripped);
             }
         }
-        out.push(p);
+        people.push(person);
     }
-    out
+
+    Ok(LoadedNames { people, stdout })
 }
 
 /// A wordlist loaded the way the original loads it (`readlines` then `strip!`).
@@ -550,12 +495,12 @@ pub fn load_family_list(data: &[u8]) -> WordList {
 mod tests {
     use super::*;
 
-    fn person(cols: [&str; 6]) -> Person {
+    fn person<'a>(cols: [&'a str; 6]) -> Person<'a> {
         cols.map(|s| {
             if s.is_empty() {
                 None
             } else {
-                Some(s.as_bytes().to_vec())
+                Some(s.as_bytes())
             }
         })
     }

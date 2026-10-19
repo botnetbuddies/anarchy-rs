@@ -14,276 +14,6 @@ use std::sync::OnceLock;
 use crate::names::{load_given_list, NameFields, WordList};
 use crate::util;
 
-#[derive(Clone, Debug)]
-pub struct Prep {
-    pub title: Vec<u8>,
-    pub fold: Vec<u8>,
-    pub lower: Vec<u8>,
-}
-
-impl Default for Prep {
-    fn default() -> Self {
-        Prep {
-            title: Vec::with_capacity(64),
-            fold: Vec::with_capacity(64),
-            lower: Vec::with_capacity(64),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct PreparedName<'a> {
-    pub lower: [Option<&'a [u8]>; 6],
-    pub title: [Option<&'a [u8]>; 6],
-    pub fold: [Option<&'a [u8]>; 6],
-    pub present: u16,
-    pub plain: bool,
-    pub clean: bool,
-    pub has_pct: bool,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum Mode {
-    Normal,
-    LowerFold,
-}
-
-#[rustfmt::skip]
-pub const MISSING: [[&[u8]; 2]; 6] = [
-    [b"%givenname", b"%Givenname"], // 0 first
-    [b"%givenname", b"%Givenname"], // 1 middle
-    [b"%surname",   b"%Surname"],   // 2 last
-    [b"%a-z",       b"%A-Z"],       // 3 firstinit
-    [b"%a-z",       b"%A-Z"],       // 4 middleinit
-    [b"%a-z",       b"%A-Z"],       // 5 lastinit
-];
-
-#[inline(always)]
-pub fn seg_slot(seg: Seg) -> i32 {
-    match seg {
-        Seg::FirstUpper | Seg::FirstLower => 0,
-        Seg::MiddleUpper | Seg::MiddleLower => 1,
-        Seg::LastUpper | Seg::LastLower => 2,
-        Seg::FirstInitUpper | Seg::FirstInitLower => 3,
-        Seg::MiddleInitUpper | Seg::MiddleInitLower => 4,
-        Seg::LastInitUpper | Seg::LastInitLower => 5,
-        _ => -1,
-    }
-}
-
-/// Build the per-person prepared field table.
-///
-/// All three casings of every field are computed once per person (rather than
-/// once per person *per plugin*), and `present` lets templates whose required
-/// fields are missing skip resolution entirely. The transformed byte forms
-/// live in the caller's [`Prep`] (reused across people, so after warmup this
-/// is allocation-free); the two-phase push-then-reference scheme keeps the
-/// returned borrows valid regardless of reallocation during the pushes.
-///
-/// `need_title` is false when case folding is on and no strict plugin is
-/// selected, in which case `Mode::Normal` resolution never runs and the
-/// title-cased variants are skipped (aliased to `fold`, never read).
-pub fn prepare<'p, N: NameFields + ?Sized>(
-    name: &'p N,
-    prep: &'p mut Prep,
-    need_title: bool,
-) -> PreparedName<'p> {
-    let fields = [
-        name.firstname(),
-        name.middlename(),
-        name.lastname(),
-        name.firstinitial(),
-        name.middleinitial(),
-        name.lastinitial(),
-    ];
-    // Which slots need a transformed (owned) form; lengths recorded in phase 1
-    // so phase 2 can slice without recomputing Unicode casing lengths.
-    let mut lower_len = [0usize; 6];
-    let mut title_len = [0usize; 6];
-    let mut fold_len = [0usize; 6];
-    let mut present = 0u16;
-    let mut plain = true;
-    let mut clean = true;
-    let mut has_pct = false;
-
-    prep.title.clear();
-    prep.lower.clear();
-    prep.fold.clear();
-
-    // Phase 1: classify and append every transformed form.
-    for (i, f) in fields.iter().enumerate() {
-        let Some(f) = *f else { continue };
-        if f.is_empty() {
-            continue;
-        }
-        present |= 1u16 << i;
-        let mut ascii = true;
-        let mut lower_ok = true;
-        for &b in f {
-            if b >= 0x80 {
-                ascii = false;
-                plain = false;
-            } else if b.is_ascii_uppercase() {
-                lower_ok = false;
-                plain = false;
-            }
-            if b == b' ' || b == b'\'' {
-                clean = false;
-            }
-            if b == b'%' {
-                has_pct = true;
-            }
-        }
-        if lower_ok && ascii {
-            // Already lowercase ASCII: borrow, only the title form is derived.
-            if need_title {
-                let before = prep.title.len();
-                prep.title.push(f[0].to_ascii_uppercase());
-                util::push_bytes(&mut prep.title, &f[1..]);
-                title_len[i] = prep.title.len() - before;
-            }
-        } else if ascii {
-            // ASCII with uppercase: lower = downcase(f); fold == lower; title.
-            let before = prep.lower.len();
-            util::downcase_into(f, &mut prep.lower);
-            lower_len[i] = prep.lower.len() - before;
-            if need_title {
-                let before = prep.title.len();
-                util::upcase_it_into(f, &mut prep.title);
-                title_len[i] = prep.title.len() - before;
-            }
-        } else {
-            // Non-ASCII: all three forms are distinct byte sequences.
-            let before = prep.lower.len();
-            util::downcase_into(f, &mut prep.lower);
-            lower_len[i] = prep.lower.len() - before;
-            if need_title {
-                let before = prep.title.len();
-                util::upcase_it_into(f, &mut prep.title);
-                title_len[i] = prep.title.len() - before;
-            }
-            let before = prep.fold.len();
-            util::upcase_then_downcase_into(f, &mut prep.fold);
-            fold_len[i] = prep.fold.len() - before;
-        }
-    }
-
-    // Phase 2: all pushes are done, so borrows are stable.
-    let mut lower: [Option<&[u8]>; 6] = [None; 6];
-    let mut title: [Option<&[u8]>; 6] = [None; 6];
-    let mut fold: [Option<&[u8]>; 6] = [None; 6];
-    let mut loff = 0usize;
-    let mut toff = 0usize;
-    let mut foff = 0usize;
-    for (i, f) in fields.iter().enumerate() {
-        if (present & (1u16 << i)) == 0 {
-            continue;
-        }
-        let f = *f;
-        if lower_len[i] > 0 {
-            lower[i] = Some(&prep.lower[loff..loff + lower_len[i]]);
-            loff += lower_len[i];
-        } else {
-            lower[i] = f;
-        }
-        if title_len[i] > 0 {
-            title[i] = Some(&prep.title[toff..toff + title_len[i]]);
-            toff += title_len[i];
-        } else {
-            // Either plain (title = upper-first of a lowercase field, which is
-            // only read when need_title, and plain fields do push that form) or
-            // need_title == false (title is never read in LowerFold mode).
-            title[i] = lower[i];
-        }
-        if fold_len[i] > 0 {
-            fold[i] = Some(&prep.fold[foff..foff + fold_len[i]]);
-            foff += fold_len[i];
-        } else if lower_len[i] > 0 {
-            fold[i] = lower[i]; // ASCII: downcase(upcase_it(x)) == downcase(x)
-        } else {
-            fold[i] = f; // plain: already lowercase ASCII
-        }
-    }
-
-    PreparedName {
-        lower,
-        title,
-        fold,
-        present,
-        plain,
-        clean,
-        has_pct,
-    }
-}
-
-/// Unrolled segment resolution over a prepared name.
-///
-/// The 24 static templates have at most three segments; matching on the count
-/// lets LLVM fully unroll the hot loops and drop the per-iteration bounds
-/// checks. Missing fields fall back to the static `MISSING` token table.
-#[inline]
-pub fn resolve(segs: &[Seg], lits: &[u8], pn: &PreparedName, mode: Mode, out: &mut Vec<u8>) {
-    out.clear();
-    match segs.len() {
-        1 => push_seg(segs[0], lits, pn, mode, out),
-        2 => {
-            push_seg(segs[0], lits, pn, mode, out);
-            push_seg(segs[1], lits, pn, mode, out);
-        }
-        3 => {
-            push_seg(segs[0], lits, pn, mode, out);
-            push_seg(segs[1], lits, pn, mode, out);
-            push_seg(segs[2], lits, pn, mode, out);
-        }
-        n => {
-            for &seg in segs {
-                push_seg(seg, lits, pn, mode, out);
-            }
-            let _ = n;
-        }
-    }
-}
-
-#[inline(always)]
-fn push_seg(seg: Seg, lits: &[u8], pn: &PreparedName, mode: Mode, out: &mut Vec<u8>) {
-    match seg {
-        Seg::Lit(a, b) => util::push_bytes(out, &lits[a as usize..b as usize]),
-        Seg::Tok(k) => util::push_bytes(out, k.text()),
-        other => {
-            let slot = seg_slot(other) as usize;
-            let upper = matches!(
-                other,
-                Seg::FirstUpper
-                    | Seg::MiddleUpper
-                    | Seg::LastUpper
-                    | Seg::FirstInitUpper
-                    | Seg::MiddleInitUpper
-                    | Seg::LastInitUpper
-            );
-            let table = match mode {
-                Mode::Normal => {
-                    if upper {
-                        &pn.title
-                    } else {
-                        &pn.lower
-                    }
-                }
-                Mode::LowerFold => {
-                    if upper {
-                        &pn.fold
-                    } else {
-                        &pn.lower
-                    }
-                }
-            };
-            match table[slot] {
-                Some(v) => util::push_bytes(out, v),
-                None => util::push_bytes(out, MISSING[slot][upper as usize]),
-            }
-        }
-    }
-}
-
 /// Expansion tokens that can survive the format-string substitution stage.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ExpKind {
@@ -363,13 +93,6 @@ pub enum PluginKind {
     TruncFirst4Last4,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct TemplateInfo {
-    pub required: u16,
-    pub has_tok: bool,
-    pub lit_pct: bool,
-}
-
 #[derive(Clone)]
 pub struct Plugin {
     pub name: String,
@@ -379,9 +102,7 @@ pub struct Plugin {
     /// on strings, not on a fixed template). Those must use the faithful
     /// round-based expansion; the 24 static templates never do.
     pub strict: bool,
-    pub required: u16,
-    pub has_tok: bool,
-    pub lit_pct: bool,
+    pub required_mask: u8,
 }
 
 /// ABK -> format string, replicating the original's ordered `gsub!` sequence.
@@ -484,36 +205,33 @@ pub fn parse_template(s: &str) -> (Vec<Seg>, Vec<u8>) {
     (segs, lits)
 }
 
-fn template_info(segs: &[Seg], lits: &[u8]) -> TemplateInfo {
-    let mut required = 0u16;
-    for seg in segs {
-        let s = seg_slot(*seg);
-        if s >= 0 {
-            required |= 1u16 << s;
+pub fn compute_required_mask(kind: &PluginKind) -> u8 {
+    let mut mask = 0u8;
+    match kind {
+        PluginKind::TruncFirstLast8 | PluginKind::TruncFirst4Last4 => {
+            mask |= (1 << crate::names::FIRSTNAME) | (1 << crate::names::LASTNAME);
         }
-        if let Seg::Tok(_) = *seg {
-            // presence tracked via has_tok
+        PluginKind::Format { segs, .. } => {
+            for seg in segs {
+                match seg {
+                    Seg::FirstUpper | Seg::FirstLower => mask |= 1 << crate::names::FIRSTNAME,
+                    Seg::LastUpper | Seg::LastLower => mask |= 1 << crate::names::LASTNAME,
+                    Seg::MiddleUpper | Seg::MiddleLower => mask |= 1 << crate::names::MIDDLENAME,
+                    Seg::FirstInitUpper | Seg::FirstInitLower => {
+                        mask |= 1 << crate::names::FIRSTINITIAL
+                    }
+                    Seg::LastInitUpper | Seg::LastInitLower => {
+                        mask |= 1 << crate::names::LASTINITIAL
+                    }
+                    Seg::MiddleInitUpper | Seg::MiddleInitLower => {
+                        mask |= 1 << crate::names::MIDDLEINITIAL
+                    }
+                    Seg::Lit(_, _) | Seg::Tok(_) => {}
+                }
+            }
         }
     }
-    let mut has_tok = false;
-    let mut lit_pct = false;
-    for seg in segs {
-        if let Seg::Tok(_) = *seg {
-            has_tok = true;
-            break;
-        }
-    }
-    for &b in lits {
-        if b == b'%' {
-            lit_pct = true;
-            break;
-        }
-    }
-    TemplateInfo {
-        required,
-        has_tok,
-        lit_pct,
-    }
+    mask
 }
 
 fn format_plugin(name: &str, raw: &str, abk: bool, strict: bool) -> Plugin {
@@ -523,14 +241,13 @@ fn format_plugin(name: &str, raw: &str, abk: bool, strict: bool) -> Plugin {
         raw.to_string()
     };
     let (segs, lits) = parse_template(&expanded);
-    let info = template_info(&segs, &lits);
+    let kind = PluginKind::Format { segs, lits };
+    let required_mask = compute_required_mask(&kind);
     Plugin {
         name: name.to_string(),
-        kind: PluginKind::Format { segs, lits },
+        kind,
         strict,
-        required: info.required,
-        has_tok: info.has_tok,
-        lit_pct: info.lit_pct,
+        required_mask,
     }
 }
 
@@ -544,17 +261,13 @@ pub fn static_plugins() -> Vec<Plugin> {
             name: "firstlast[8]".to_string(),
             kind: PluginKind::TruncFirstLast8,
             strict: false,
-            required: (1u16 << 0) | (1u16 << 2),
-            has_tok: false,
-            lit_pct: false,
+            required_mask: (1 << crate::names::FIRSTNAME) | (1 << crate::names::LASTNAME),
         },
         Plugin {
             name: "first[4]last[4]".to_string(),
             kind: PluginKind::TruncFirst4Last4,
             strict: false,
-            required: (1u16 << 0) | (1u16 << 2),
-            has_tok: false,
-            lit_pct: false,
+            required_mask: (1 << crate::names::FIRSTNAME) | (1 << crate::names::LASTNAME),
         },
         format_plugin("firstl", "annak", true, false),
         format_plugin("f.last", "a.key", true, false),
@@ -683,11 +396,41 @@ pub fn resolve_string<N: NameFields + ?Sized>(
     }
 }
 
-/// Push a field value into `out`, upper-casing its first character when
-/// `upper`, or `missing` when the field is absent.
+/// Resolve a static template for a case-insensitive run.
 ///
-/// `MISSING[slot][upper]` is the equivalent table used by [`resolve`]; this
-/// function is kept for the cold `estimate`/`all_outputs` paths.
+/// Uppercase segments use `downcase(upcase_it(x))` — the exact composition the
+/// original applies (upcase during substitution, downcase before printing) —
+/// and lowercase segments are downcased as usual. The result is therefore
+/// already in final form, so [`crate::engine::Emitter::emit_lower`] can insert
+/// it without a second case-folding pass. Only used for the 24 built-in
+/// templates, whose literals contain no letters.
+pub fn resolve_string_lower<N: NameFields + ?Sized>(
+    segs: &[Seg],
+    lits: &[u8],
+    name: &N,
+    out: &mut Vec<u8>,
+) {
+    out.clear();
+    for seg in segs {
+        match *seg {
+            Seg::Lit(a, b) => util::push_bytes(out, &lits[a as usize..b as usize]),
+            Seg::FirstUpper => val_lower(name.firstname(), out, b"%Givenname"),
+            Seg::MiddleUpper => val_lower(name.middlename(), out, b"%Givenname"),
+            Seg::LastUpper => val_lower(name.lastname(), out, b"%Surname"),
+            Seg::FirstLower => val(name.firstname(), out, false, b"%givenname"),
+            Seg::MiddleLower => val(name.middlename(), out, false, b"%givenname"),
+            Seg::LastLower => val(name.lastname(), out, false, b"%surname"),
+            Seg::FirstInitUpper => val_lower(name.firstinitial(), out, b"%A-Z"),
+            Seg::MiddleInitUpper => val_lower(name.middleinitial(), out, b"%A-Z"),
+            Seg::LastInitUpper => val_lower(name.lastinitial(), out, b"%A-Z"),
+            Seg::FirstInitLower => val(name.firstinitial(), out, false, b"%a-z"),
+            Seg::MiddleInitLower => val(name.middleinitial(), out, false, b"%a-z"),
+            Seg::LastInitLower => val(name.lastinitial(), out, false, b"%a-z"),
+            Seg::Tok(k) => util::push_bytes(out, k.text()),
+        }
+    }
+}
+
 fn val(v: Option<&[u8]>, out: &mut Vec<u8>, upper: bool, missing: &[u8]) {
     match v {
         Some(s) => {
@@ -701,6 +444,91 @@ fn val(v: Option<&[u8]>, out: &mut Vec<u8>, upper: bool, missing: &[u8]) {
         }
         None => util::push_bytes(out, missing),
     }
+}
+
+fn val_lower(v: Option<&[u8]>, out: &mut Vec<u8>, missing: &[u8]) {
+    match v {
+        Some(s) => {
+            if !util::upcase_then_downcase_into(s, out) {
+                util::push_bytes(out, missing);
+            }
+        }
+        None => util::push_bytes(out, missing),
+    }
+}
+
+/// [`resolve_string_lower`] for fields already known to be lowercase ASCII
+/// (see [`field_props`]): present segments are copied verbatim, while missing
+/// fields still produce the expansion token. This is the common input-file
+/// case and skips the per-segment `is_ascii` + lowercase scans.
+pub fn resolve_string_lower_raw<N: NameFields + ?Sized>(
+    segs: &[Seg],
+    lits: &[u8],
+    name: &N,
+    out: &mut Vec<u8>,
+) {
+    out.clear();
+    for seg in segs {
+        match *seg {
+            Seg::Lit(a, b) => util::push_bytes(out, &lits[a as usize..b as usize]),
+            Seg::FirstUpper => val_raw(name.firstname(), out, b"%Givenname"),
+            Seg::MiddleUpper => val_raw(name.middlename(), out, b"%Givenname"),
+            Seg::LastUpper => val_raw(name.lastname(), out, b"%Surname"),
+            Seg::FirstLower => val_raw(name.firstname(), out, b"%givenname"),
+            Seg::MiddleLower => val_raw(name.middlename(), out, b"%givenname"),
+            Seg::LastLower => val_raw(name.lastname(), out, b"%surname"),
+            Seg::FirstInitUpper => val_raw(name.firstinitial(), out, b"%A-Z"),
+            Seg::MiddleInitUpper => val_raw(name.middleinitial(), out, b"%A-Z"),
+            Seg::LastInitUpper => val_raw(name.lastinitial(), out, b"%A-Z"),
+            Seg::FirstInitLower => val_raw(name.firstinitial(), out, b"%a-z"),
+            Seg::MiddleInitLower => val_raw(name.middleinitial(), out, b"%a-z"),
+            Seg::LastInitLower => val_raw(name.lastinitial(), out, b"%a-z"),
+            Seg::Tok(k) => util::push_bytes(out, k.text()),
+        }
+    }
+}
+
+fn val_raw(v: Option<&[u8]>, out: &mut Vec<u8>, missing: &[u8]) {
+    match v {
+        Some(s) if !s.is_empty() => util::push_bytes(out, s),
+        _ => util::push_bytes(out, missing),
+    }
+}
+
+/// One scan over the six fields, returning:
+///
+/// * `plain`: every present field is lowercase ASCII (so case folding is a
+///   no-op and the uppercase composition equals the lowercase one), and
+/// * `clean`: no field contains a space or apostrophe (so the post-processing
+///   `delete(" ")/delete("'")` pass cannot change the candidate).
+///
+/// Both properties are sufficient because the built-in templates' literals are
+/// only `.`; custom formats bypass them.
+pub fn field_props<N: NameFields + ?Sized>(name: &N) -> (bool, bool) {
+    let mut plain = true;
+    let mut clean = true;
+    let fields = [
+        name.firstname(),
+        name.middlename(),
+        name.lastname(),
+        name.firstinitial(),
+        name.middleinitial(),
+        name.lastinitial(),
+    ];
+    for f in fields.iter().flatten() {
+        for &b in *f {
+            if b >= 0x80 || b.is_ascii_uppercase() {
+                plain = false;
+            }
+            if b == b' ' || b == b'\'' {
+                clean = false;
+            }
+        }
+        if !plain && !clean {
+            break;
+        }
+    }
+    (plain, clean)
 }
 
 /// One expansion-token occurrence in a resolved string.
@@ -905,25 +733,19 @@ mod tests {
     use super::*;
     use crate::names::{NameRef, Person};
 
-    fn person(cols: [&str; 6]) -> Person {
+    fn person<'a>(cols: [&'a str; 6]) -> Person<'a> {
         cols.map(|s| {
             if s.is_empty() {
                 None
             } else {
-                Some(s.as_bytes().to_vec())
+                Some(s.as_bytes())
             }
         })
     }
 
     #[test]
-    fn prepare_classifies() {
-        let props = |c: [&str; 6]| {
-            let p = person(c);
-            let name = NameRef::from_person(&p);
-            let mut prep = Prep::default();
-            let pn = prepare(&name, &mut prep, true);
-            (pn.plain, pn.clean)
-        };
+    fn field_props_classifies() {
+        let props = |c: [&str; 6]| field_props(&NameRef::from_person(&person(c)));
         assert_eq!(props(["anna", "key", "", "", "", ""]), (true, true));
         assert_eq!(props(["a", "k", "b", "", "", ""]), (true, true));
         // Uppercase forces the folding path.
@@ -935,124 +757,29 @@ mod tests {
         assert_eq!(props(["o'brien", "key", "", "", "", ""]), (true, false));
     }
 
-    fn ref_val(v: Option<&[u8]>, out: &mut Vec<u8>, upper: bool, missing: &[u8]) {
-        match v {
-            Some(s) => {
-                if upper {
-                    if !util::upcase_it_into(s, out) {
-                        util::push_bytes(out, missing);
-                    }
-                } else {
-                    util::downcase_into(s, out);
-                }
-            }
-            None => util::push_bytes(out, missing),
-        }
-    }
-
-    fn ref_val_lower(v: Option<&[u8]>, out: &mut Vec<u8>, missing: &[u8]) {
-        match v {
-            Some(s) => {
-                if !util::upcase_then_downcase_into(s, out) {
-                    util::push_bytes(out, missing);
-                }
-            }
-            None => util::push_bytes(out, missing),
-        }
-    }
-
-    /// Reference implementation, transcribed from the pre-`prepare` resolvers.
-    fn ref_resolve<N: NameFields + ?Sized>(
-        segs: &[Seg],
-        lits: &[u8],
-        name: &N,
-        mode: Mode,
-        out: &mut Vec<u8>,
-    ) {
-        out.clear();
-        let upper_val = |v: Option<&[u8]>, out: &mut Vec<u8>, missing: &[u8]| match mode {
-            Mode::Normal => ref_val(v, out, true, missing),
-            Mode::LowerFold => ref_val_lower(v, out, missing),
-        };
-        for seg in segs {
-            match *seg {
-                Seg::Lit(a, b) => util::push_bytes(out, &lits[a as usize..b as usize]),
-                Seg::FirstUpper => upper_val(name.firstname(), out, b"%Givenname"),
-                Seg::MiddleUpper => upper_val(name.middlename(), out, b"%Givenname"),
-                Seg::LastUpper => upper_val(name.lastname(), out, b"%Surname"),
-                Seg::FirstLower => ref_val(name.firstname(), out, false, b"%givenname"),
-                Seg::MiddleLower => ref_val(name.middlename(), out, false, b"%givenname"),
-                Seg::LastLower => ref_val(name.lastname(), out, false, b"%surname"),
-                Seg::FirstInitUpper => upper_val(name.firstinitial(), out, b"%A-Z"),
-                Seg::MiddleInitUpper => upper_val(name.middleinitial(), out, b"%A-Z"),
-                Seg::LastInitUpper => upper_val(name.lastinitial(), out, b"%A-Z"),
-                Seg::FirstInitLower => ref_val(name.firstinitial(), out, false, b"%a-z"),
-                Seg::MiddleInitLower => ref_val(name.middleinitial(), out, false, b"%a-z"),
-                Seg::LastInitLower => ref_val(name.lastinitial(), out, false, b"%a-z"),
-                Seg::Tok(k) => util::push_bytes(out, k.text()),
-            }
-        }
-    }
-
-    /// `prepare` + `resolve` must be byte-identical to the old resolvers for
-    /// both modes and every static template, including missing fields and
-    /// non-ASCII / mixed-case values.
+    /// The raw resolver is only used for `plain` names, where it must produce
+    /// exactly what the general `downcase(upcase_it(x))` resolver produces.
     #[test]
-    fn resolve_matches_reference() {
+    fn raw_lower_matches_folding_for_plain_names() {
         let cases = [
             ["anna", "key", "", "", "", ""],
             ["a", "k", "b", "", "", ""],
-            ["Anna", "Key", "A", "K", "Boom", "M"],
+            ["mary", "jane", "o'brien", "", "", ""],
             ["anna", "key", "", "K", "", ""],
-            ["anna", "key", "", "", "", "M"],
-            ["mary jane", "key", "", "", "", ""],
-            ["o'brien", "key", "", "", "", ""],
-            ["", "key", "", "", "", ""],
-            ["é", "straße", "", "", "", ""],
-            ["anna", "", "", "", "boom", ""],
         ];
+        let plugins = static_plugins();
         for c in cases {
             let p = person(c);
             let name = NameRef::from_person(&p);
-            let mut prep = Prep::default();
-            let pn = prepare(&name, &mut prep, true);
-            for plugin in &static_plugins() {
-                let PluginKind::Format { segs, lits } = &plugin.kind else {
-                    continue;
-                };
-                for mode in [Mode::Normal, Mode::LowerFold] {
-                    let mut got = Vec::new();
-                    resolve(segs, lits, &pn, mode, &mut got);
-                    let mut want = Vec::new();
-                    ref_resolve(segs, lits, &name, mode, &mut want);
-                    assert_eq!(got, want, "{} {c:?} {mode:?}", plugin.name);
+            assert!(field_props(&name).0, "{c:?} should be plain");
+            for p in &plugins {
+                if let PluginKind::Format { segs, lits } = &p.kind {
+                    let mut folded = Vec::new();
+                    let mut raw = Vec::new();
+                    resolve_string_lower(segs, lits, &name, &mut folded);
+                    resolve_string_lower_raw(segs, lits, &name, &mut raw);
+                    assert_eq!(folded, raw, "{} {c:?}", p.name);
                 }
-            }
-        }
-    }
-
-    /// With `need_title == false` the title forms are skipped; they must not be
-    /// read, and the `fold`/`lower` forms must still be correct.
-    #[test]
-    fn resolve_without_title_is_still_correct() {
-        let cases = [
-            ["Anna", "Key", "A", "K", "Boom", "M"],
-            ["é", "straße", "", "", "", ""],
-        ];
-        for c in cases {
-            let p = person(c);
-            let name = NameRef::from_person(&p);
-            let mut prep = Prep::default();
-            let pn = prepare(&name, &mut prep, false);
-            for plugin in &static_plugins() {
-                let PluginKind::Format { segs, lits } = &plugin.kind else {
-                    continue;
-                };
-                let mut got = Vec::new();
-                resolve(segs, lits, &pn, Mode::LowerFold, &mut got);
-                let mut want = Vec::new();
-                ref_resolve(segs, lits, &name, Mode::LowerFold, &mut want);
-                assert_eq!(got, want, "{} {c:?}", plugin.name);
             }
         }
     }

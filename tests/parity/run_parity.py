@@ -218,6 +218,17 @@ def build_cases():
         C.append(("names", ["-i", str(FIX / f), "-v", "-f", "fl"]))
     C.append(("names", ["-i", str(FIX / "input_full.csv"), "-f", "firstlast"]))
     C.append(("names", ["-i", str(FIX / "input_summary.csv")]))
+    # Wide rows must not silently lose name columns after the stack buffer.
+    C.append(("names", ["-i", str(FIX / "input_wide.csv"), "-f", "first.last"]))
+    # Repeated headers use the final column, even when that value is empty.
+    for plugin in ["firstlast", "last"]:
+        C.append(("names", ["-i", str(FIX / "input_repeated_columns.csv"), "-f", plugin]))
+    # File input is lowercased before character-based truncation, including
+    # Unicode mappings that expand the encoded byte length (İ -> i + dot).
+    for plugin in ["firstlast[8]", "first[4]last[4]", "first.last"]:
+        for case in ["true", "false"]:
+            C.append(("names", ["-i", str(FIX / "input_unicode.csv"),
+                                "-f", plugin, "-C", case]))
     # input file + cmdline names together
     C.append(("names", ["-i", str(FIX / "input_space.txt"), "zed", "qux"]))
 

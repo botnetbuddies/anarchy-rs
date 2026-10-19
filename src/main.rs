@@ -1,7 +1,7 @@
-//! Username Anarchy - high-performance Rust rewrite.
+//! Username Anarchy — high-performance Rust rewrite.
 //!
 //! Behavioural parity with `urbanadventurer/username-anarchy` (Ruby, v0.6) is
-//! the primary goal. See PERFORMANCE.md for the full list of intentionally
+//! the primary goal. See COMPATIBILITY.md for the full list of intentionally
 //! preserved quirks.
 
 mod engine;
@@ -15,31 +15,19 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use engine::{AutoNames, Emitter, GenOpts, GenRet, Output, Scratch};
+use engine::{AutoNames, Emitter, GenOpts, GenRet, Scratch};
 use fmt::{Ctx, Plugin};
 use names::{Name, Person};
 
 const VERSION: &str = "0.6";
 
-const BANNER: &str = r#"
- ___ ____                                                        
-|   |    \ ______  ____ _______   ____  _____     __ __    ____  
-|   :    //  ___/_/    \\_  __ \ /    \ \__  \   /  :  \ _/    \
-'   .   / \___ \ \   o_/ |  | \/|   :  \ /  o \ |  . .  \\   o_/ 
- \_____/ /______) \_____)|__|   |___:  /(______)|__: :  / \_____)
-       _____                         \/       .__     \/      
-      /     \    ____  _____  _______   ____  |  |__  ___.__.   
-     /   o   \  /    \ \__  \ \_  __ \_/ ___\ |  |  \(   :  |   
-    /    .    \|   .  \ /  o \ |  | \/\  \___ |   .  \\___  |   
-    \____:__  /|___:__/(______)|__|    \_____)|___:__//_____|   
-            \/                                                  
-"#;
+const BANNER: &str = "anarchy-rs\n\n";
 
 fn usage() -> String {
     let mut s = String::from(BANNER);
-    s.push_str("Usage: ./username-anarchy [OPTIONS]... [firstname|first last|first middle last]\n");
+    s.push_str("Usage: anarchy-rs [OPTIONS]... [firstname|first last|first middle last]\n");
     s.push_str(&format!(
-        "Author: Andrew Horton (urbanadventurer). Version: {}\n\n",
+        "Based on Username Anarchy by Andrew Horton (urbanadventurer). Version: {}\n\n",
         VERSION
     ));
     s.push_str(
@@ -222,6 +210,11 @@ fn root_dir() -> PathBuf {
     if std::path::Path::new("names").is_dir() {
         if let Ok(cwd) = std::env::current_dir() {
             return cwd;
+        }
+    }
+    if std::path::Path::new("username-anarchy/names").is_dir() {
+        if let Ok(cwd) = std::env::current_dir() {
+            return cwd.join("username-anarchy");
         }
     }
     std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
@@ -419,22 +412,22 @@ fn run() -> i32 {
         _ => {}
     }
 
-    let mut prefix: Vec<u8> = Vec::new();
-    // Borrowed input rows: the file bytes plus one `(start, end)` range per
-    // field, so a multi-million-row file costs no per-field allocation.
-    let mut file: Option<(Vec<u8>, Vec<names::Row>)> = None;
-    if let Some(path) = &opts.input_file {
-        let data = match std::fs::read(path) {
+    let mut data: Vec<u8> = match &opts.input_file {
+        Some(path) => match std::fs::read(path) {
             Ok(d) => d,
             Err(e) => {
                 eprintln!("{}: No such file or cannot read ({})", path, e);
                 return 1;
             }
-        };
-        match names::load_names_list(data) {
+        },
+        None => Vec::new(),
+    };
+    let mut prefix: Vec<u8> = Vec::new();
+    if opts.input_file.is_some() {
+        match names::load_names_list(&mut data) {
             Ok(loaded) => {
                 prefix.extend_from_slice(&loaded.stdout);
-                file = Some((loaded.data, loaded.rows));
+                people.extend(loaded.people);
             }
             Err(e) => {
                 eprintln!("{}", e);
@@ -442,8 +435,6 @@ fn run() -> i32 {
             }
         }
     } else if opts.no_input_names {
-        // The original pushes an empty `{}` here and (because it only strips it
-        // when `no_input_names` is false) leaves it in place in `-a` mode.
         people.push(Default::default());
     } else if people.is_empty() {
         print!("{}", usage());
@@ -474,14 +465,6 @@ fn run() -> i32 {
     let mut auto_given: Vec<Option<Vec<u8>>> = Vec::new();
     let mut auto_family: Vec<Option<Vec<u8>>> = Vec::new();
     let is_auto = opts.no_input_names && opts.format_to_recognise.is_none();
-    // In `-a` mode the original folds the `-i` rows into the cross-product's
-    // head, so convert the borrowed rows back to owned people here (the head is
-    // always tiny compared to the 10^8-entry dictionaries).
-    if is_auto {
-        if let Some((data, rows)) = file.take() {
-            people.extend(names::rows_to_people(&data, &rows));
-        }
-    }
     if is_auto {
         auto_family = match read_auto_lines(&opts.family_names) {
             Ok(v) => v,
@@ -506,12 +489,6 @@ fn run() -> i32 {
                 family: &auto_family,
             },
         }
-    } else if let Some((data, rows)) = &file {
-        Work::File {
-            head: &people,
-            data: data.as_slice(),
-            rows: rows.as_slice(),
-        }
     } else {
         Work::Fixed(&people)
     };
@@ -528,9 +505,6 @@ fn run() -> i32 {
 
     let est = match &work {
         Work::Fixed(people) => engine::estimate(people, &selected, &ctx, &gen_opts),
-        Work::File { head, data, rows } => {
-            engine::estimate_file(head, data, rows, &selected, &ctx, &gen_opts)
-        }
         Work::Auto { head, names } => {
             engine::estimate_auto(head, *names, &selected, &ctx, &gen_opts)
         }
@@ -548,7 +522,7 @@ fn run() -> i32 {
     let min_parallel: u64 = std::env::var("USERNAME_ANARCHY_MIN_PARALLEL")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())
-        .unwrap_or(200_000);
+        .unwrap_or(10_000);
     let parallel = est > min_parallel && threads > 1;
 
     let generated = if parallel {
@@ -565,13 +539,10 @@ fn run() -> i32 {
     };
 
     let stdout = std::io::stdout();
-    let lock = stdout.lock();
-    // One buffered writer for both the warning preamble and the generated
-    // lines; `generated` streams straight through without a final copy.
-    let mut out = std::io::BufWriter::with_capacity(1 << 20, lock);
-    let _ = out.write_all(&prefix);
-    let _ = generated.write_all(&mut out);
-    let _ = out.flush();
+    let mut lock = stdout.lock();
+    let _ = lock.write_all(&prefix);
+    let _ = lock.write_all(&generated);
+    let _ = lock.flush();
     0
 }
 
@@ -706,19 +677,19 @@ fn apply_opt(
     false
 }
 
-fn person_of(first: &str, middle: Option<&str>, last: Option<&str>) -> Person {
-    let mut p: Person = Default::default();
+fn person_of<'a>(first: &'a str, middle: Option<&'a str>, last: Option<&'a str>) -> Person<'a> {
+    let mut p: Person<'a> = Default::default();
     p[names::FIRSTNAME] = nonempty(first);
     p[names::MIDDLENAME] = middle.and_then(nonempty);
     p[names::LASTNAME] = last.and_then(nonempty);
     p
 }
 
-fn nonempty(s: &str) -> Option<Vec<u8>> {
+fn nonempty(s: &str) -> Option<&[u8]> {
     if s.is_empty() {
         None
     } else {
-        Some(s.as_bytes().to_vec())
+        Some(s.as_bytes())
     }
 }
 
@@ -776,76 +747,79 @@ fn read_auto_lines(path: &str) -> Result<Vec<Option<Vec<u8>>>, String> {
 /// building them up front would dominate the run.
 #[derive(Clone, Copy)]
 enum Work<'a> {
-    Fixed(&'a [Person]),
-    /// Borrowed input rows: fields are `(start, end)` ranges into `data`.
-    File {
-        head: &'a [Person],
-        data: &'a [u8],
-        rows: &'a [names::Row],
-    },
+    Fixed(&'a [Person<'a>]),
     Auto {
-        head: &'a [Person],
+        head: &'a [Person<'a>],
         names: AutoNames<'a>,
     },
 }
 
-fn run_serial(
-    work: Work,
+fn output_hint(work: Work<'_>, est: u64) -> usize {
+    // A cross-product can emit millions of copies of a few distinct names.
+    // Reserve a small table for auto mode and let it grow with unique output.
+    match work {
+        Work::Fixed(_) => est.clamp(16384, 2_000_000) as usize,
+        Work::Auto { .. } => 16384,
+    }
+}
+
+fn run_serial<'a>(
+    work: Work<'a>,
     plugins: &[Plugin],
     ctx: &Ctx,
     opts: &GenOpts,
     est: u64,
-) -> Result<Output, String> {
-    let mut em = Emitter::with_capacity(opts, engine::worker_hint(est, 1));
+) -> Result<Vec<u8>, String> {
+    let sink = engine::FinalSink::with_capacity(output_hint(work, est));
+    let mut em = Emitter::new(opts, sink);
     let mut sc = Scratch::new();
     match work {
         Work::Fixed(people) => engine::gen_people(people, plugins, ctx, opts, &mut em, &mut sc)?,
-        Work::File { head, data, rows } => {
-            engine::gen_rows(data, rows, head, plugins, ctx, opts, &mut em, &mut sc)?
-        }
         Work::Auto { head, names } => {
             engine::gen_auto(head, names, plugins, ctx, opts, &mut em, &mut sc)?
         }
     }
-    Ok(em.finish())
+    Ok(em.into_sink().finish())
 }
 
-fn run_parallel(
-    work: Work,
+fn run_parallel<'a>(
+    work: Work<'a>,
     plugins: &[Plugin],
     ctx: &Ctx,
     opts: &GenOpts,
     threads: usize,
     est: u64,
-) -> Result<Output, String> {
-    let hint = engine::worker_hint(est, threads);
-    let mut err: Option<String> = None;
-    let mut sinks: Vec<engine::Sink> = Vec::new();
-    // Work counters live for the whole scope, because handles are joined after
-    // the `match` (and so outlive the arm that borrows them).
-    let fixed_cursor = AtomicUsize::new(0);
-    let auto_cursor = AtomicUsize::new(0);
-    let file_cursor = AtomicUsize::new(0);
-    std::thread::scope(|s| {
-        let mut handles = Vec::new();
-        match work {
-            Work::Fixed(people) => {
-                // Dynamic scheduling: workers pull `chunk` rows at a time, so a
-                // few expensive rows cannot strand an entire static range.
-                let workers = threads.min(people.len().max(1));
-                let chunk = people.len().div_ceil(workers.saturating_mul(8)).max(1);
-                let cursor = &fixed_cursor;
+) -> Result<Vec<u8>, String> {
+    match work {
+        Work::Fixed(people) => {
+            let chunk_size = 512;
+            let total_chunks = people.len().div_ceil(chunk_size);
+            if total_chunks <= 1 || threads <= 1 {
+                return run_serial(work, plugins, ctx, opts, est);
+            }
+            let workers = threads.min(total_chunks);
+            let (tx, rx) =
+                std::sync::mpsc::sync_channel::<Result<engine::Batch, String>>(workers * 2);
+            let cursor = AtomicUsize::new(0);
+            let mut final_sink = engine::FinalSink::with_capacity(output_hint(work, est));
+            let mut merge_err: Option<String> = None;
+
+            std::thread::scope(|s| {
                 for _ in 0..workers {
-                    handles.push(s.spawn(move || {
-                        let mut em = Emitter::with_capacity(opts, hint);
+                    let tx = tx.clone();
+                    let cursor = &cursor;
+                    s.spawn(move || {
                         let mut sc = Scratch::new();
-                        let mut result = Ok(());
                         loop {
-                            let start = cursor.fetch_add(chunk, Ordering::Relaxed);
-                            if start >= people.len() {
+                            let chunk_idx = cursor.fetch_add(1, Ordering::Relaxed);
+                            if chunk_idx >= total_chunks {
                                 break;
                             }
-                            let end = start.saturating_add(chunk).min(people.len());
+                            let start = chunk_idx * chunk_size;
+                            let end = (start + chunk_size).min(people.len());
+                            let batch =
+                                engine::Batch::new(chunk_idx, (end - start) * plugins.len());
+                            let mut em = Emitter::new(opts, batch);
                             if let Err(e) = engine::gen_people(
                                 &people[start..end],
                                 plugins,
@@ -854,137 +828,145 @@ fn run_parallel(
                                 &mut em,
                                 &mut sc,
                             ) {
-                                result = Err(e);
+                                let _ = tx.send(Err(e));
+                                break;
+                            }
+                            if tx.send(Ok(em.into_sink())).is_err() {
                                 break;
                             }
                         }
-                        (result, em.into_sink())
-                    }));
+                    });
                 }
-            }
-            Work::File { head, data, rows } => {
-                if rows.is_empty() {
-                    // Nothing to schedule; just emit the positional head.
-                    handles.push(s.spawn(move || {
-                        let mut em = Emitter::with_capacity(opts, hint);
-                        let mut sc = Scratch::new();
-                        let r = engine::gen_rows(
-                            data, rows, head, plugins, ctx, opts, &mut em, &mut sc,
-                        );
-                        (r, em.into_sink())
-                    }));
-                } else {
-                    // Same dynamic scheduling as `Fixed`, but the positional head
-                    // is emitted once by whichever worker draws the first chunk.
-                    let workers = threads.min(rows.len().max(1));
-                    let chunk = rows.len().div_ceil(workers.saturating_mul(8)).max(1);
-                    let cursor = &file_cursor;
-                    for _ in 0..workers {
-                        handles.push(s.spawn(move || {
-                            let mut em = Emitter::with_capacity(opts, hint);
-                            let mut sc = Scratch::new();
-                            let mut result = Ok(());
-                            loop {
-                                let start = cursor.fetch_add(chunk, Ordering::Relaxed);
-                                if start >= rows.len() {
-                                    break;
-                                }
-                                let end = start.saturating_add(chunk).min(rows.len());
-                                // The head is generated exactly once, by the
-                                // first worker to pull a chunk.
-                                let head_part: &[Person] = if start == 0 { head } else { &[] };
-                                if let Err(e) = engine::gen_rows(
-                                    data,
-                                    &rows[start..end],
-                                    head_part,
-                                    plugins,
-                                    ctx,
-                                    opts,
-                                    &mut em,
-                                    &mut sc,
-                                ) {
-                                    result = Err(e);
-                                    break;
-                                }
+                drop(tx);
+
+                let mut stash: std::collections::HashMap<usize, engine::Batch> =
+                    std::collections::HashMap::new();
+                let mut next_chunk = 0;
+                while next_chunk < total_chunks {
+                    if let Some(batch) = stash.remove(&next_chunk) {
+                        engine::merge_batch(&batch, &mut final_sink);
+                        next_chunk += 1;
+                        continue;
+                    }
+                    match rx.recv() {
+                        Ok(Ok(batch)) => {
+                            if batch.chunk_idx == next_chunk {
+                                engine::merge_batch(&batch, &mut final_sink);
+                                next_chunk += 1;
+                            } else {
+                                stash.insert(batch.chunk_idx, batch);
                             }
-                            (result, em.into_sink())
-                        }));
-                    }
-                }
-            }
-            Work::Auto { head, names } => {
-                if names.family.is_empty() {
-                    // No families: only the head (sentinel) remains.
-                    let empty = AutoNames {
-                        given: names.given,
-                        family: &[],
-                    };
-                    handles.push(s.spawn(move || {
-                        let mut em = Emitter::with_capacity(opts, hint);
-                        let mut sc = Scratch::new();
-                        let r = engine::gen_auto(head, empty, plugins, ctx, opts, &mut em, &mut sc);
-                        (r, em.into_sink())
-                    }));
-                } else {
-                    let workers = threads.min(names.family.len().max(1));
-                    let chunk = names
-                        .family
-                        .len()
-                        .div_ceil(workers.saturating_mul(8))
-                        .max(1);
-                    let cursor = &auto_cursor;
-                    for _ in 0..workers {
-                        let given = names.given;
-                        let family = names.family;
-                        handles.push(s.spawn(move || {
-                            let mut em = Emitter::with_capacity(opts, hint);
-                            let mut sc = Scratch::new();
-                            let mut result = Ok(());
-                            loop {
-                                let start = cursor.fetch_add(chunk, Ordering::Relaxed);
-                                if start >= family.len() {
-                                    break;
-                                }
-                                let end = start.saturating_add(chunk).min(family.len());
-                                // The sentinel/positional people are generated once.
-                                let head_part: &[Person] = if start == 0 { head } else { &[] };
-                                let part = AutoNames {
-                                    given,
-                                    family: &family[start..end],
-                                };
-                                if let Err(e) = engine::gen_auto(
-                                    head_part, part, plugins, ctx, opts, &mut em, &mut sc,
-                                ) {
-                                    result = Err(e);
-                                    break;
-                                }
+                        }
+                        Ok(Err(e)) => {
+                            if merge_err.is_none() {
+                                merge_err = Some(e);
                             }
-                            (result, em.into_sink())
-                        }));
+                            break;
+                        }
+                        Err(_) => break,
                     }
                 }
+                // Disconnect before joining workers: an error can leave other
+                // producers waiting to send into the bounded channel.
+                drop(rx);
+            });
+
+            if let Some(e) = merge_err {
+                return Err(e);
             }
+            Ok(final_sink.finish())
         }
-        for h in handles {
-            match h.join() {
-                Ok((Ok(()), sink)) => sinks.push(sink),
-                Ok((Err(e), _)) => {
-                    if err.is_none() {
-                        err = Some(e);
-                    }
-                }
-                Err(_) => {
-                    if err.is_none() {
-                        err = Some("worker thread panicked".to_string());
-                    }
-                }
+        Work::Auto { head, names } => {
+            if names.family.is_empty() {
+                return run_serial(work, plugins, ctx, opts, est);
             }
+            // Aim for roughly 512 people per batch, including large given-name
+            // dictionaries, instead of reserving a large product per worker.
+            let chunk_size = (512 / names.given.len().max(1)).max(1);
+            let total_chunks = names.family.len().div_ceil(chunk_size);
+            if total_chunks <= 1 || threads <= 1 {
+                return run_serial(work, plugins, ctx, opts, est);
+            }
+            let workers = threads.min(total_chunks);
+            let (tx, rx) =
+                std::sync::mpsc::sync_channel::<Result<engine::Batch, String>>(workers * 2);
+            let cursor = AtomicUsize::new(0);
+            let mut final_sink = engine::FinalSink::with_capacity(output_hint(work, est));
+            let mut merge_err: Option<String> = None;
+
+            std::thread::scope(|s| {
+                for _ in 0..workers {
+                    let tx = tx.clone();
+                    let cursor = &cursor;
+                    s.spawn(move || {
+                        let mut sc = Scratch::new();
+                        loop {
+                            let chunk_idx = cursor.fetch_add(1, Ordering::Relaxed);
+                            if chunk_idx >= total_chunks {
+                                break;
+                            }
+                            let start = chunk_idx * chunk_size;
+                            let end = (start + chunk_size).min(names.family.len());
+                            let batch = engine::Batch::new(
+                                chunk_idx,
+                                (end - start) * names.given.len() * plugins.len(),
+                            );
+                            let mut em = Emitter::new(opts, batch);
+                            let head_part: &[Person<'a>] = if chunk_idx == 0 { head } else { &[] };
+                            let part = AutoNames {
+                                given: names.given,
+                                family: &names.family[start..end],
+                            };
+                            if let Err(e) = engine::gen_auto(
+                                head_part, part, plugins, ctx, opts, &mut em, &mut sc,
+                            ) {
+                                let _ = tx.send(Err(e));
+                                break;
+                            }
+                            if tx.send(Ok(em.into_sink())).is_err() {
+                                break;
+                            }
+                        }
+                    });
+                }
+                drop(tx);
+
+                let mut stash: std::collections::HashMap<usize, engine::Batch> =
+                    std::collections::HashMap::new();
+                let mut next_chunk = 0;
+                while next_chunk < total_chunks {
+                    if let Some(batch) = stash.remove(&next_chunk) {
+                        engine::merge_batch(&batch, &mut final_sink);
+                        next_chunk += 1;
+                        continue;
+                    }
+                    match rx.recv() {
+                        Ok(Ok(batch)) => {
+                            if batch.chunk_idx == next_chunk {
+                                engine::merge_batch(&batch, &mut final_sink);
+                                next_chunk += 1;
+                            } else {
+                                stash.insert(batch.chunk_idx, batch);
+                            }
+                        }
+                        Ok(Err(e)) => {
+                            if merge_err.is_none() {
+                                merge_err = Some(e);
+                            }
+                            break;
+                        }
+                        Err(_) => break,
+                    }
+                }
+                drop(rx);
+            });
+
+            if let Some(e) = merge_err {
+                return Err(e);
+            }
+            Ok(final_sink.finish())
         }
-    });
-    if let Some(e) = err {
-        return Err(e);
     }
-    Ok(engine::merge(sinks, threads))
 }
 
 // ---------------------------------------------------------------------------
@@ -1100,9 +1082,9 @@ fn recognise(target: &str, opts: &Options, plugins: &[Plugin]) -> RecogResult {
                 inner.push(RNode::Nil);
                 continue;
             }
-            let mut p: Person = Default::default();
-            p[names::FIRSTNAME] = Some(giv.clone());
-            p[names::LASTNAME] = Some(fam.clone());
+            let mut p: Person<'_> = Default::default();
+            p[names::FIRSTNAME] = Some(giv.as_slice());
+            p[names::LASTNAME] = Some(fam.as_slice());
             let name = Name::init(&p);
             if opts.verbose {
                 println!("{}", String::from_utf8_lossy(&engine::pp_line(&name)));
@@ -1164,4 +1146,81 @@ fn read_stripped_lines(path: &str) -> Result<Vec<Vec<u8>>, String> {
         out.push(stripped.to_vec());
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod pipeline_tests {
+    use super::*;
+
+    fn opts() -> GenOpts {
+        GenOpts {
+            substitute: false,
+            max_sub: -1,
+            verbose: true,
+            case_insensitive: false,
+            suffix: Some(b"@example.com".to_vec()),
+        }
+    }
+
+    #[test]
+    fn parallel_fixed_matches_serial_across_chunk_boundaries() {
+        let people: Vec<_> = (0..1600)
+            .map(|i| match i % 3 {
+                0 => person_of("Anna", Some("Boom"), Some("Key")),
+                1 => person_of("Élodie", None, Some("Dubois")),
+                _ => person_of("anna", None, None),
+            })
+            .collect();
+        let work = Work::Fixed(&people);
+        let plugins = fmt::static_plugins();
+        let ctx = Ctx::new(String::new(), String::new());
+        let opts = opts();
+        assert_eq!(
+            run_parallel(work, &plugins, &ctx, &opts, 4, 40_000).unwrap(),
+            run_serial(work, &plugins, &ctx, &opts, 40_000).unwrap()
+        );
+    }
+
+    #[test]
+    fn parallel_auto_matches_serial_with_head_and_duplicate_names() {
+        let given = vec![Some(b"anna".to_vec()), Some(b"bob".to_vec()), None];
+        let family: Vec<_> = (0..400)
+            .map(|i| Some(format!("family{}", i % 7).into_bytes()))
+            .collect();
+        let head = [person_of("zed", None, Some("key"))];
+        let work = Work::Auto {
+            head: &head,
+            names: AutoNames {
+                given: &given,
+                family: &family,
+            },
+        };
+        let plugins = fmt::static_plugins();
+        let ctx = Ctx::new(String::new(), String::new());
+        let opts = opts();
+        assert_eq!(
+            run_parallel(work, &plugins, &ctx, &opts, 4, 30_000).unwrap(),
+            run_serial(work, &plugins, &ctx, &opts, 30_000).unwrap()
+        );
+    }
+
+    #[test]
+    fn worker_error_disconnects_producers_before_join() {
+        let mut people = vec![person_of("anna", None, Some("key")); 32_768];
+        people[0] = person_of("anna", None, None);
+        let fixture = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/parity/fixtures/given_nonl.txt"
+        );
+        let ctx = Ctx::new(fixture.into(), fixture.into());
+        let plugins: Vec<_> = fmt::static_plugins()
+            .into_iter()
+            .filter(|p| p.name == "firstlast")
+            .collect();
+        let mut opts = opts();
+        opts.substitute = true;
+        opts.verbose = false;
+        let result = run_parallel(Work::Fixed(&people), &plugins, &ctx, &opts, 4, 32_768);
+        assert!(result.unwrap_err().contains("no trailing newline"));
+    }
 }
