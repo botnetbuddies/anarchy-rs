@@ -68,7 +68,7 @@ jobs:
           USERNAME_ANARCHY_MIN_PARALLEL: "0"
 
       - name: Upload release bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: anarchy-rs-x86_64-unknown-linux-musl
           path: dist/
