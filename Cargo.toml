@@ -1,33 +1,20 @@
 [package]
-name = "username-anarchy"
+name = "anarchy-rs"
 version = "0.6.0"
 edition = "2021"
-description = "High-performance Rust rewrite of urbanadventurer/username-anarchy"
+description = "Rust port of Username Anarchy, a username generator"
 license = "MIT"
 
 [[bin]]
-name = "username-anarchy-rs"
+name = "anarchy-rs"
 path = "src/main.rs"
 
 [dependencies]
 rustc-hash = "2"
-
-[features]
-default = ["hash-fx"]
-hash-fx = []
-hash-wy = []
-hash-rapid = []
 
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"
-# Keep debug symbols so `perf`/flamegraph can attribute samples to Rust frames.
-debug = true
-
-[profile.bench]
-opt-level = 3
-lto = true
-codegen-units = 1
 debug = true

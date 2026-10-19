@@ -1,0 +1,5654 @@
+[
+  {
+    "id": "001",
+    "kind": "names",
+    "args": [
+      "Mary",
+      "Beth",
+      "Key",
+      "-F",
+      "%%f"
+    ],
+    "stdout_sha256": "b9af101300a5f409bd316716899be2791d92dd92f3123f29653b693deced66d6"
+  },
+  {
+    "id": "002",
+    "kind": "names",
+    "args": [
+      "Mary-Jane",
+      "De La Cruz",
+      "-F",
+      "%%f",
+      "-C",
+      "true"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "003",
+    "kind": "names",
+    "args": [
+      "ΟΣ",
+      "ΣΟΣ",
+      "-C",
+      "true"
+    ],
+    "stdout_sha256": "a565c8f4522be826b4705ad15d68f8dd5e23711a185c0e00327ca1d926a4acea"
+  },
+  {
+    "id": "004",
+    "kind": "names",
+    "args": [
+      "Mary-Jane",
+      "De La Cruz",
+      "-F",
+      "%%f",
+      "-C",
+      "false"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "005",
+    "kind": "names",
+    "args": [
+      "ΟΣ",
+      "ΣΟΣ",
+      "-C",
+      "false"
+    ],
+    "stdout_sha256": "53d19cff7f07f25cc992c37522452e966baff1be83237188e0973599ec873117"
+  },
+  {
+    "id": "006",
+    "kind": "listfmt",
+    "args": [
+      "-v",
+      "-l"
+    ],
+    "stdout_sha256": "8fbd9d68cfddfbe29f0a509248291e5eb0d8b068abe6b1c6ab46afff97632848"
+  },
+  {
+    "id": "007",
+    "kind": "names",
+    "args": [
+      "Anna",
+      "Key",
+      "-f",
+      "first.last",
+      "-@",
+      "@ΟΣ.EXAMPLE"
+    ],
+    "stdout_sha256": "e9fe03b19fa25175292e612ed0a4ee50b4a93350ba884bc55b04d74100a7c57e"
+  },
+  {
+    "id": "008",
+    "kind": "names",
+    "args": [
+      "anna"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "009",
+    "kind": "names",
+    "args": [
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "010",
+    "kind": "names",
+    "args": [
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "4cc806a2c63285fe1161d7c826fa16196e1679f0b7a9a411e4860d59b205d7df"
+  },
+  {
+    "id": "011",
+    "kind": "names",
+    "args": [
+      "O'Toole"
+    ],
+    "stdout_sha256": "e3903c026f84a0ad86edbdb732f9b81f8f31ae5991504f1ff876b371f6240c7f"
+  },
+  {
+    "id": "012",
+    "kind": "names",
+    "args": [
+      "von Grippenvud"
+    ],
+    "stdout_sha256": "42c3d4d1c18806bc98e7a3ace65af75bb95e36a17eaf6f84059d5f15da96622e"
+  },
+  {
+    "id": "013",
+    "kind": "names",
+    "args": [
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "014",
+    "kind": "usage",
+    "args": [
+      "anna",
+      "key",
+      "extra",
+      "ignored"
+    ]
+  },
+  {
+    "id": "015",
+    "kind": "names",
+    "args": [
+      "ANNA",
+      "BOOM",
+      "KEY"
+    ],
+    "stdout_sha256": "4cc806a2c63285fe1161d7c826fa16196e1679f0b7a9a411e4860d59b205d7df"
+  },
+  {
+    "id": "016",
+    "kind": "names",
+    "args": [
+      "de la",
+      "cruz"
+    ],
+    "stdout_sha256": "199dc04f5a1efc3bc888de58ffbf20e9ffb0f18f6593fced00b57accc9d69fc4"
+  },
+  {
+    "id": "017",
+    "kind": "names",
+    "args": [
+      ""
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "018",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "019",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "020",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first",
+      "anna"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "021",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "022",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "023",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "024",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "025",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "026",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first.last",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "027",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first.last",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "028",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first.last",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "029",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first.last",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "030",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast[8]",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "031",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast[8]",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "032",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast[8]",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "033",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast[8]",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "034",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first[4]last[4]",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "035",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first[4]last[4]",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "036",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first[4]last[4]",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "037",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first[4]last[4]",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "038",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstl",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "610251a65782ecbbcc75ff7520cebdcb0b6ae41646b76b65b2c05555796132e2"
+  },
+  {
+    "id": "039",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstl",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "610251a65782ecbbcc75ff7520cebdcb0b6ae41646b76b65b2c05555796132e2"
+  },
+  {
+    "id": "040",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstl",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "041",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstl",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "042",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "4318cfd393c8e086bb6d597d21e8c1dda841e1d7cc3fd32ff5f67d5cf8d253ef"
+  },
+  {
+    "id": "043",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "4318cfd393c8e086bb6d597d21e8c1dda841e1d7cc3fd32ff5f67d5cf8d253ef"
+  },
+  {
+    "id": "044",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "045",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "046",
+    "kind": "names",
+    "args": [
+      "-f",
+      "flast",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "955d3611f5205f58309233deaedee8feca50d29f5ca54b22c917e980cea7db78"
+  },
+  {
+    "id": "047",
+    "kind": "names",
+    "args": [
+      "-f",
+      "flast",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "955d3611f5205f58309233deaedee8feca50d29f5ca54b22c917e980cea7db78"
+  },
+  {
+    "id": "048",
+    "kind": "names",
+    "args": [
+      "-f",
+      "flast",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "049",
+    "kind": "names",
+    "args": [
+      "-f",
+      "flast",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "050",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lfirst",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "d6f3dc203b232deadaa4638e18293a07f031495b9c2c0a97b79c47ac29dd7b6e"
+  },
+  {
+    "id": "051",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lfirst",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "d6f3dc203b232deadaa4638e18293a07f031495b9c2c0a97b79c47ac29dd7b6e"
+  },
+  {
+    "id": "052",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lfirst",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "053",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lfirst",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "054",
+    "kind": "names",
+    "args": [
+      "-f",
+      "l.first",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "b845496f87d4828ce9d15484119460778017e18c8607f10f9cced9a0f5aa5584"
+  },
+  {
+    "id": "055",
+    "kind": "names",
+    "args": [
+      "-f",
+      "l.first",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "b845496f87d4828ce9d15484119460778017e18c8607f10f9cced9a0f5aa5584"
+  },
+  {
+    "id": "056",
+    "kind": "names",
+    "args": [
+      "-f",
+      "l.first",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "057",
+    "kind": "names",
+    "args": [
+      "-f",
+      "l.first",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "058",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lastf",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "0dddad0a311a9f108dc0396fe4aeaeec12350bc48ca7bff27e92d976673211d0"
+  },
+  {
+    "id": "059",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lastf",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "0dddad0a311a9f108dc0396fe4aeaeec12350bc48ca7bff27e92d976673211d0"
+  },
+  {
+    "id": "060",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lastf",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "061",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lastf",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "062",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "a7998f247bd965694ff227fa325c81169a07471a8b6808d3e002a486c4e65975"
+  },
+  {
+    "id": "063",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "a7998f247bd965694ff227fa325c81169a07471a8b6808d3e002a486c4e65975"
+  },
+  {
+    "id": "064",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "065",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "a7998f247bd965694ff227fa325c81169a07471a8b6808d3e002a486c4e65975"
+  },
+  {
+    "id": "066",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.f",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "a954e31c432e3a5d3dadc11fda1bab4f398aa88ddd91fa5863670807af9d6a4a"
+  },
+  {
+    "id": "067",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.f",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "a954e31c432e3a5d3dadc11fda1bab4f398aa88ddd91fa5863670807af9d6a4a"
+  },
+  {
+    "id": "068",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.f",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "069",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.f",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "070",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.first",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "8868eb61323cfac59902115d807a1e3b55fa966d7fbd849ec985228f482a5947"
+  },
+  {
+    "id": "071",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.first",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "8868eb61323cfac59902115d807a1e3b55fa966d7fbd849ec985228f482a5947"
+  },
+  {
+    "id": "072",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.first",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "073",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.first",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "074",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "955d3611f5205f58309233deaedee8feca50d29f5ca54b22c917e980cea7db78"
+  },
+  {
+    "id": "075",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "955d3611f5205f58309233deaedee8feca50d29f5ca54b22c917e980cea7db78"
+  },
+  {
+    "id": "076",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "077",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "078",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first1",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "079",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first1",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "080",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first1",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "081",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first1",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "082",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "68ab4f391780fadb2bc9a9bcf5871fbff8bcbd644ae74af461e5d164db2d339b"
+  },
+  {
+    "id": "083",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "68ab4f391780fadb2bc9a9bcf5871fbff8bcbd644ae74af461e5d164db2d339b"
+  },
+  {
+    "id": "084",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "085",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "086",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fmlast",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "087",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fmlast",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "79e905eef7e526f309f593ca4cc68517250110f76ffc2d2eb6dc8c0df977b067"
+  },
+  {
+    "id": "088",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fmlast",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "089",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fmlast",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "090",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstmiddlelast",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "091",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstmiddlelast",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "db5f5242d20ec35bede75d724bafaec2e355a3462d4eae0f883a1a485f46a9e7"
+  },
+  {
+    "id": "092",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstmiddlelast",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "093",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstmiddlelast",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "094",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fml",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "095",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fml",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "610ce60c0ac217edcab5e1a46bcd6832f17846cc80fc5816f1e86de5e5098575"
+  },
+  {
+    "id": "096",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fml",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "097",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fml",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "098",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "68ab4f391780fadb2bc9a9bcf5871fbff8bcbd644ae74af461e5d164db2d339b"
+  },
+  {
+    "id": "099",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "68ab4f391780fadb2bc9a9bcf5871fbff8bcbd644ae74af461e5d164db2d339b"
+  },
+  {
+    "id": "100",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "101",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "102",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FirstLast",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "103",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FirstLast",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "104",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FirstLast",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "105",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FirstLast",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "106",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "107",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "108",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "109",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "110",
+    "kind": "names",
+    "args": [
+      "-f",
+      "Last",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "a7998f247bd965694ff227fa325c81169a07471a8b6808d3e002a486c4e65975"
+  },
+  {
+    "id": "111",
+    "kind": "names",
+    "args": [
+      "-f",
+      "Last",
+      "anna",
+      "boom",
+      "key"
+    ],
+    "stdout_sha256": "a7998f247bd965694ff227fa325c81169a07471a8b6808d3e002a486c4e65975"
+  },
+  {
+    "id": "112",
+    "kind": "names",
+    "args": [
+      "-f",
+      "Last",
+      "anna"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "113",
+    "kind": "names",
+    "args": [
+      "-f",
+      "Last",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "a7998f247bd965694ff227fa325c81169a07471a8b6808d3e002a486c4e65975"
+  },
+  {
+    "id": "114",
+    "kind": "names",
+    "args": [
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "115",
+    "kind": "names",
+    "args": [
+      "-v",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "cae3c27c66f21f1257e26ab49eead8f560d7531d8109ddc9ddb66abfbf49b9e2"
+  },
+  {
+    "id": "116",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "4a2d9a109dad37c781fd01e58957931c744761c2dae40b782d4d7e06e25530c5"
+  },
+  {
+    "id": "117",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-s",
+      "on",
+      "-m",
+      "3",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "4a2d9a109dad37c781fd01e58957931c744761c2dae40b782d4d7e06e25530c5"
+  },
+  {
+    "id": "118",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "1",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "119",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "first.last",
+      "anna"
+    ],
+    "stdout_sha256": "7b78b36ecf9710c151983472578c1d87dbcf35637c1fd0bb1a2375541d265e31"
+  },
+  {
+    "id": "120",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "fmlast",
+      "anna"
+    ],
+    "stdout_sha256": "8a775b92a91a088fdada9d897b5474c172bcaa000bf9ce9a99ec9fa91d25af59"
+  },
+  {
+    "id": "121",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "fmlast",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "9fc2af8c5733718eb0ab7d372ade000408e695c3fdfd9f2ade576083792bba15"
+  },
+  {
+    "id": "122",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "firstmiddlelast",
+      "anna"
+    ],
+    "stdout_sha256": "de1318d20b5ac361da57e6eb4326bd6331964062eb3440e44b44a1db888eb938"
+  },
+  {
+    "id": "123",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "firstl",
+      "anna"
+    ],
+    "stdout_sha256": "94eb8cd19742e231b7213f99a94818edbe99290d053e646ca2d1f7ab2ac0334f"
+  },
+  {
+    "id": "124",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "fl",
+      "anna"
+    ],
+    "stdout_sha256": "666a372e58916daf3bfa1fa659a6cda45928cfff821b246c6d155f2957b3870a"
+  },
+  {
+    "id": "125",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "fml",
+      "anna"
+    ],
+    "stdout_sha256": "d593dec3558815b5aa402d708a35375597d4d98019b67fdbad3f45f7a50279b7"
+  },
+  {
+    "id": "126",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FL",
+      "anna"
+    ],
+    "stdout_sha256": "666a372e58916daf3bfa1fa659a6cda45928cfff821b246c6d155f2957b3870a"
+  },
+  {
+    "id": "127",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FirstLast",
+      "anna"
+    ],
+    "stdout_sha256": "4a2d9a109dad37c781fd01e58957931c744761c2dae40b782d4d7e06e25530c5"
+  },
+  {
+    "id": "128",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "first1",
+      "anna"
+    ],
+    "stdout_sha256": "1742ac8099e643d0c1d72a1fa44d59befcfbde70132f4b2c532e157578c02178"
+  },
+  {
+    "id": "129",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "flast",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "3e011552d937fad7b7af58442386bd4956ce413ef7bc421bb56d7fe416159c4a"
+  },
+  {
+    "id": "130",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "first.last",
+      "anna",
+      "",
+      "key"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "131",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "a-b-k",
+      "anna"
+    ],
+    "stdout_sha256": "267bf33276fc9b6b2d3794880348d763b95ebfbf7d7624e472a814acdb47c000"
+  },
+  {
+    "id": "132",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%f-%l",
+      "anna"
+    ],
+    "stdout_sha256": "a241f9aa87222e3619ce58d3cedac5a24605156b3b7ce870c687ba86bc3e2304"
+  },
+  {
+    "id": "133",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%F.%L",
+      "anna"
+    ],
+    "stdout_sha256": "7b78b36ecf9710c151983472578c1d87dbcf35637c1fd0bb1a2375541d265e31"
+  },
+  {
+    "id": "134",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "anna%D",
+      "anna"
+    ],
+    "stdout_sha256": "1742ac8099e643d0c1d72a1fa44d59befcfbde70132f4b2c532e157578c02178"
+  },
+  {
+    "id": "135",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%givenname",
+      "anna"
+    ],
+    "stdout_sha256": "5e7a328e9e687e9544feec2b9b924531d3093d137b61c6b7e5bb4db566c4e61f"
+  },
+  {
+    "id": "136",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%Givenname",
+      "anna"
+    ],
+    "stdout_sha256": "5e7a328e9e687e9544feec2b9b924531d3093d137b61c6b7e5bb4db566c4e61f"
+  },
+  {
+    "id": "137",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "a%l",
+      "anna"
+    ],
+    "stdout_sha256": "51d8732a49de2f8abd16b9e92d9013ed6acd2a58c41b080c137b7102f67f24d5"
+  },
+  {
+    "id": "138",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%a-z",
+      "anna"
+    ],
+    "stdout_sha256": "e2675e968ab5c9e5b16c816e41f4a294e3880ef8122ed5207218658c64716ede"
+  },
+  {
+    "id": "139",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%A-Z",
+      "anna"
+    ],
+    "stdout_sha256": "e2675e968ab5c9e5b16c816e41f4a294e3880ef8122ed5207218658c64716ede"
+  },
+  {
+    "id": "140",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%DD",
+      "anna"
+    ],
+    "stdout_sha256": "d2ebe60063f7bd3db44868dedc78acb96af484e1286f268208f6d76deb23dc14"
+  },
+  {
+    "id": "141",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%D",
+      "anna"
+    ],
+    "stdout_sha256": "7427877c40fb0361401248f9c96abe6117396bc6ab16811b5b1706274c02443e"
+  },
+  {
+    "id": "142",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%DDD",
+      "anna"
+    ],
+    "stdout_sha256": "5801d37d099f6c57729890737a7607d9f89cae9ab303af74afcf8867f31e41fd"
+  },
+  {
+    "id": "143",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%a-z-%A-Z",
+      "anna"
+    ],
+    "stdout_sha256": "120af5199f0543ba3739760605be7069aa106856adf4dadf9b16f1492cd58318"
+  },
+  {
+    "id": "144",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "x%givenname%D",
+      "anna"
+    ],
+    "stdout_sha256": "ab5c4a51194811c7edb2648b9f96541a23d4a64362341b074a079cd8d2ca3084"
+  },
+  {
+    "id": "145",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given_dup.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "3",
+      "-f",
+      "firstlast",
+      "key"
+    ],
+    "stdout_sha256": "d2aaf603b8195cc9c613901e13e66de56a26b24323dce02883196660905f85f5"
+  },
+  {
+    "id": "146",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given_empty.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "4a2d9a109dad37c781fd01e58957931c744761c2dae40b782d4d7e06e25530c5"
+  },
+  {
+    "id": "147",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "-m",
+      "4",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "74e6a04d7dcc12a9928d9c1365857747fda9cdfb1fcaed4f05528aa99411a53a"
+  },
+  {
+    "id": "148",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "-m",
+      "4",
+      "-f",
+      "last",
+      "anna"
+    ],
+    "stdout_sha256": "231b7b657993fff2b8f91421b622eb08f19a71696d9be5e7e7622754f7e9a8b4"
+  },
+  {
+    "id": "149",
+    "kind": "names",
+    "args": [
+      "-@",
+      "@EXAMPLE.COM",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "3a826b8546ce711c346b5f302731cd43af06146a2ff0d60ba6026368bd33182d"
+  },
+  {
+    "id": "150",
+    "kind": "error",
+    "args": [
+      "-@",
+      "",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "151",
+    "kind": "names",
+    "args": [
+      "--suffix",
+      ".corp",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "c0eb8a1e9e412398337949b3f10cdc90a760be4b7c5114e67fcb366ee0930155"
+  },
+  {
+    "id": "152",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-f",
+      "FirstLast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "3801cf2a358c1250b928d277f6847ad5695d7eac900157686a3652372bf3ff16"
+  },
+  {
+    "id": "153",
+    "kind": "names",
+    "args": [
+      "-C",
+      "TRUE",
+      "-f",
+      "FirstLast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "154",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "54ef0cde844fecf84daeb17227ff7c91a007849380fe944a2611aa1f3d0dd37b"
+  },
+  {
+    "id": "155",
+    "kind": "names",
+    "args": [
+      "--case-insensitive",
+      "false",
+      "-@",
+      "@X",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "5e54b79ecb4fc7bc45de7555d7eae4ea8ae2920ecdeeb20ea9a2d2db84dc6b18"
+  },
+  {
+    "id": "156",
+    "kind": "names",
+    "args": [
+      "-F",
+      "%f.%l",
+      "andrew",
+      "horton"
+    ],
+    "stdout_sha256": "dfb7cfdc4214d54a7c75c50dabc66a36fff1808efc3aa2c43da411c194a127ce"
+  },
+  {
+    "id": "157",
+    "kind": "names",
+    "args": [
+      "-F",
+      "v-annakey",
+      "andrew",
+      "horton"
+    ],
+    "stdout_sha256": "c8ea8332551119ba65f9588bdcfd8200a23b020bb26391ee52c6946b04463378"
+  },
+  {
+    "id": "158",
+    "kind": "names",
+    "args": [
+      "-F",
+      "anna.key",
+      "andrew",
+      "horton"
+    ],
+    "stdout_sha256": "dfb7cfdc4214d54a7c75c50dabc66a36fff1808efc3aa2c43da411c194a127ce"
+  },
+  {
+    "id": "159",
+    "kind": "names",
+    "args": [
+      "-F",
+      "ak",
+      "andrew",
+      "horton"
+    ],
+    "stdout_sha256": "ae3b50782560c2eb55510bc71b6eba2425642db8d12be15eab3a615297a66333"
+  },
+  {
+    "id": "160",
+    "kind": "names",
+    "args": [
+      "-F",
+      "ABK",
+      "andrew",
+      "boom",
+      "horton"
+    ],
+    "stdout_sha256": "2b4e5b0158cac093da4bce9e1c7455189ea7607540eb61cdaecbbc52fbea3c74"
+  },
+  {
+    "id": "161",
+    "kind": "names",
+    "args": [
+      "-F",
+      "\"%f.%l\"",
+      "andrew",
+      "horton"
+    ],
+    "stdout_sha256": "dfb7cfdc4214d54a7c75c50dabc66a36fff1808efc3aa2c43da411c194a127ce"
+  },
+  {
+    "id": "162",
+    "kind": "names",
+    "args": [
+      "-F",
+      "annaboomkey",
+      "andrew",
+      "boom",
+      "horton"
+    ],
+    "stdout_sha256": "f1a4bd1fd36636ed555cef95672f7398f64be51f732de12d3457aa6b3261336e"
+  },
+  {
+    "id": "163",
+    "kind": "names",
+    "args": [
+      "-F",
+      "key.anna",
+      "andrew",
+      "horton"
+    ],
+    "stdout_sha256": "eab705d7720533ea2971322c5134ea29266d8dc60c7b469cee7c712e3b1b7540"
+  },
+  {
+    "id": "164",
+    "kind": "names",
+    "args": [
+      "-F",
+      "v-%f%l",
+      "-C",
+      "false",
+      "Andrew",
+      "Horton"
+    ],
+    "stdout_sha256": "c8ea8332551119ba65f9588bdcfd8200a23b020bb26391ee52c6946b04463378"
+  },
+  {
+    "id": "165",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names.txt"
+    ],
+    "stdout_sha256": "702a1bd04d1128eeda93657a21b0f7ca94de49c41eb4d2374add16bdd32dca24"
+  },
+  {
+    "id": "166",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "a2b5d4ec831e6ab4be0e539787e724566e7714febf9f96f28fc3a0c0bb0ba586"
+  },
+  {
+    "id": "167",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names.txt",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "b62e616450db4e05cfa1ab4f899433bb8df059103abb3803603f39283c9b1b20"
+  },
+  {
+    "id": "168",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names2.txt"
+    ],
+    "stdout_sha256": "9ac4caa20bf3ab875a3a54dda29067d418d297ef76f8a2f2309d46e08aa7137b"
+  },
+  {
+    "id": "169",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names2.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "a6874191a637cd141824f2eefb0a74ee217c0c529bb7e08b51a55163bbfa0074"
+  },
+  {
+    "id": "170",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names2.txt",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "5d13aff4abb25f79332d448f32ad2c19caa5f089de937f52b575ce72a2c99b61"
+  },
+  {
+    "id": "171",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names3.txt"
+    ],
+    "stdout_sha256": "b11a48075405a4c96e3b7dfdaab48e89c0e32a7a5037e0b1ba7786d7f86d6124"
+  },
+  {
+    "id": "172",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names3.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "d4a705e1440eaf4745d6ec9299a71cd56f5f82f802fd24f542a1145c641b34f0"
+  },
+  {
+    "id": "173",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/test-names3.txt",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "e44e26be3c5e2267d352a94f07c951902b8c4a5ae4c29f127d4e2043296a62ae"
+  },
+  {
+    "id": "174",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_space.txt"
+    ],
+    "stdout_sha256": "6e2e0655a018d6c9266d4721f69f208ceec5f39745a25e4c889b6412589dfe98"
+  },
+  {
+    "id": "175",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_space.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "64645e9f993fe18e98238a1e2a2a3abd33251fb6def49ef3ee78f20433743529"
+  },
+  {
+    "id": "176",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_space.txt",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "44a200456f1d79a0e3c223a9e29b4c7e919497635a08c5f56f6a6fccb14e848f"
+  },
+  {
+    "id": "177",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_csv_header.txt"
+    ],
+    "stdout_sha256": "5baa119a76ca470705cda3270de20f214765ca16d1b9cb8d820f83822aa11a5e"
+  },
+  {
+    "id": "178",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_csv_header.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "a6874191a637cd141824f2eefb0a74ee217c0c529bb7e08b51a55163bbfa0074"
+  },
+  {
+    "id": "179",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_csv_header.txt",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "1d5282157e92c43607a7864a098ce915a20542a6dcc719ae6fba86cb65f8781a"
+  },
+  {
+    "id": "180",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_tab.txt"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "181",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_tab.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "182",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_tab.txt",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "f87bc865e8eb9f17433ba55f0c97ec8a5c51d9b9d6d6fe56129a431179c141bf"
+  },
+  {
+    "id": "183",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_full.csv"
+    ],
+    "stdout_sha256": "9ac4caa20bf3ab875a3a54dda29067d418d297ef76f8a2f2309d46e08aa7137b"
+  },
+  {
+    "id": "184",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_full.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "a6874191a637cd141824f2eefb0a74ee217c0c529bb7e08b51a55163bbfa0074"
+  },
+  {
+    "id": "185",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_full.csv",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "1cf4c5d7b6c75ec267032ff5632e6d2dca2df4de29618fbe7cbaf64e1a932577"
+  },
+  {
+    "id": "186",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unknown.csv"
+    ],
+    "stdout_sha256": "994311fe119eef7dba3d0b695e4cb037a95d01d056f01207ee8e7361fb6f7683"
+  },
+  {
+    "id": "187",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unknown.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "d63238316d60bbb0cf99bb56e0995423c69fcc80a5e0b4a79dc7f4cd7f812a0c"
+  },
+  {
+    "id": "188",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unknown.csv",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "846d5167d1495bc6e7022d3d7610789b0de1087132cb7cccba93f2248fa2ddd0"
+  },
+  {
+    "id": "189",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_mixedcase_header.csv"
+    ],
+    "stdout_sha256": "672e135893e0fd8bcae93379ed1833929baa1d7aaeebe40c98a06fa119c0ec93"
+  },
+  {
+    "id": "190",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_mixedcase_header.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "191",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_mixedcase_header.csv",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "0a155cc946c1f5908950ae0a9844b35faa0aa5d15f4d88e628a9c3941187776b"
+  },
+  {
+    "id": "192",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_emptyfields.csv"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "193",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_emptyfields.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "194",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_emptyfields.csv",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "0cc3f590a2c46e2f3762d9090cb1f642569c168c89aa90663ca5afde700b0fc0"
+  },
+  {
+    "id": "195",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_firstlastinitial.csv"
+    ],
+    "stdout_sha256": "4e3479a5883819c4dd2b335ebac4dae17282de36475a9eaf9a38f3ed923ef044"
+  },
+  {
+    "id": "196",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_firstlastinitial.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "197",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_firstlastinitial.csv",
+      "-v",
+      "-f",
+      "fl"
+    ],
+    "stdout_sha256": "72bfb672e1ae0e517d006975d5ad3b58a39106d0b57ad42683e173a7ba59be09"
+  },
+  {
+    "id": "198",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_full.csv",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "4c8dd19d0ca5cb3e19670485127aaa96abedd3c59815af78487493166d5346c8"
+  },
+  {
+    "id": "199",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_summary.csv"
+    ],
+    "stdout_sha256": "58959b75b4605c1fd7cb128ccda6e1ab5432d8b2acbd7af8663e7b82520bde37"
+  },
+  {
+    "id": "200",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_wide.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "d43e8eea7fa4912538d0ebff82fb76e35ca9c2ebcf721c3ac9347700dffb981e"
+  },
+  {
+    "id": "201",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_repeated_columns.csv",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "c5e051aa6042858321e0c1621cfdab42a13164de6f7aa8751202a5f939081094"
+  },
+  {
+    "id": "202",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_repeated_columns.csv",
+      "-f",
+      "last"
+    ],
+    "stdout_sha256": "75f9232a72ef60de6f6797dd4b41be482716f6d2d5ae96bdb534d8e705dd1a24"
+  },
+  {
+    "id": "203",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unicode.csv",
+      "-f",
+      "firstlast[8]",
+      "-C",
+      "true"
+    ],
+    "stdout_sha256": "79c4a4c09351e9f0a95f8403faedb6124663f1606a5a5f32f94aab814fccac74"
+  },
+  {
+    "id": "204",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unicode.csv",
+      "-f",
+      "firstlast[8]",
+      "-C",
+      "false"
+    ],
+    "stdout_sha256": "79c4a4c09351e9f0a95f8403faedb6124663f1606a5a5f32f94aab814fccac74"
+  },
+  {
+    "id": "205",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unicode.csv",
+      "-f",
+      "first[4]last[4]",
+      "-C",
+      "true"
+    ],
+    "stdout_sha256": "e3a25dcd32910d1630d26affebf3ecd63010372e0cfc8db6fc5163fab8742827"
+  },
+  {
+    "id": "206",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unicode.csv",
+      "-f",
+      "first[4]last[4]",
+      "-C",
+      "false"
+    ],
+    "stdout_sha256": "e3a25dcd32910d1630d26affebf3ecd63010372e0cfc8db6fc5163fab8742827"
+  },
+  {
+    "id": "207",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unicode.csv",
+      "-f",
+      "first.last",
+      "-C",
+      "true"
+    ],
+    "stdout_sha256": "a1df4a70c6bb1ba5602e966282c3d8ea5cfb5723f90d937f9fdf4233cb3e3ec1"
+  },
+  {
+    "id": "208",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_unicode.csv",
+      "-f",
+      "first.last",
+      "-C",
+      "false"
+    ],
+    "stdout_sha256": "a1df4a70c6bb1ba5602e966282c3d8ea5cfb5723f90d937f9fdf4233cb3e3ec1"
+  },
+  {
+    "id": "209",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_space.txt",
+      "zed",
+      "qux"
+    ],
+    "stdout_sha256": "9cac8c70df8c95e063552b5c1c773f588de05b4723f27ca5450bf117fa0458da"
+  },
+  {
+    "id": "210",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "france"
+    ],
+    "stdout_sha256": "6775fc92ed76644c6ec9c05d11c6466abd202db7400c48dc8ae48c7841060de2"
+  },
+  {
+    "id": "211",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "uk"
+    ],
+    "stdout_sha256": "e8151eb43ecba9106a2aad014963b2144b4d803c76ea9ffa6bfc2ed01f2329cf"
+  },
+  {
+    "id": "212",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "us"
+    ],
+    "stdout_sha256": "76024dd9f683a61cc6810a332e8a28bd7aec9140cb33fbefd4d42d2f557c25f8"
+  },
+  {
+    "id": "213",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "FRANCE",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "5d2ec9bc95891eb0107c0cadfa5205b693a3237c24b3b4ca3d697d81709ea455"
+  },
+  {
+    "id": "214",
+    "kind": "names",
+    "args": [
+      "--auto",
+      "--country",
+      "france",
+      "-s",
+      "on",
+      "-m",
+      "2",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "c409c4c11660e0b1e15fa0438e257845b055ce747e50d16516fe3c2fd3d72b9f"
+  },
+  {
+    "id": "215",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt"
+    ],
+    "stdout_sha256": "0a1c0429f6493c68a283ec9e28a80c1a5724843663631e535b81aedb4836def6"
+  },
+  {
+    "id": "216",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "first.last",
+      "-s",
+      "on",
+      "-m",
+      "2"
+    ],
+    "stdout_sha256": "02ef6629e13d33320984d136c0961b5212e82d7d59bdd0c8bb61948a10b5b2b9"
+  },
+  {
+    "id": "217",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "c02f18c2a0b6b53559114837b44a6b37ddb74cea80eb932104ec2fa8782a63b7"
+  },
+  {
+    "id": "218",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given_nonl.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "firstlast",
+      "-s",
+      "on"
+    ]
+  },
+  {
+    "id": "219",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given_nonl.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FLast",
+      "-s",
+      "on"
+    ],
+    "stdout_sha256": "c5a0a677f5064c555fb880db230f0669b78c5031bfc7d36f738c1d9d8d782541"
+  },
+  {
+    "id": "220",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FLast",
+      "-s",
+      "on",
+      "-v"
+    ],
+    "stdout_sha256": "3dd1dd44bb5fba76d747f7989c912b370cf93a92e15b39c60f0dcc7313870f67"
+  },
+  {
+    "id": "221",
+    "kind": "listfmt",
+    "args": [
+      "-l"
+    ],
+    "stdout_sha256": "cf99f7c2bf025d56609cc418c0d6cabea981112f0c1e2a273ad7f9860b314278"
+  },
+  {
+    "id": "222",
+    "kind": "listfmt",
+    "args": [
+      "--list-formats"
+    ],
+    "stdout_sha256": "cf99f7c2bf025d56609cc418c0d6cabea981112f0c1e2a273ad7f9860b314278"
+  },
+  {
+    "id": "223",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "b.key"
+    ],
+    "stdout_sha256": "6ba4fc8fea7bf8f6bb4acac3c295077332404fc78c36e023435ae905caf40664"
+  },
+  {
+    "id": "224",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "annakey"
+    ],
+    "stdout_sha256": "5ff7b61344d0348ad8b8cab41d7df3b00d8e7216e0ed1064bb46b48cfc0bcc08"
+  },
+  {
+    "id": "225",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "bobkey"
+    ],
+    "stdout_sha256": "55f3ebd137a9a07bb90b6beb10d16eb9db340965766a6063aa65eb188a8dda81"
+  },
+  {
+    "id": "226",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "anna"
+    ],
+    "stdout_sha256": "6444a52feca3bc5ff5dcc023b4f358790fbb63cd7f376e039a4875b16abc15ec"
+  },
+  {
+    "id": "227",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "key"
+    ],
+    "stdout_sha256": "b58720d30f3394d3685b2c80c36cafabc4b305fd1696057c893ffb87be885c08"
+  },
+  {
+    "id": "228",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "carlsmith"
+    ],
+    "stdout_sha256": "c071175f55335955d95a786fcf42a3d2ae7089573e21d593c7c33375f46ee1e7"
+  },
+  {
+    "id": "229",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "nnakey"
+    ],
+    "stdout_sha256": "d823d25426e33731c15e66f4d6755d26b42d78421b5dcae853178b78a7f6fcdd"
+  },
+  {
+    "id": "230",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "bs"
+    ],
+    "stdout_sha256": "ab1d5ee6c8aa2b43a3652f94672aa42dbfe6e70d8de61dbf61d62e4518350f96"
+  },
+  {
+    "id": "231",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "abc"
+    ],
+    "stdout_sha256": "04c4aeb089241a226fb252a5747d63b0698b9c8cc772dcaae360290aaa30dc64"
+  },
+  {
+    "id": "232",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-v",
+      "--recognise",
+      "key"
+    ],
+    "stdout_sha256": "d03983dcd9b29cef69be55985df0850dad59e02295fda02e701a8756472de6cd"
+  },
+  {
+    "id": "233",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-v",
+      "--recognise",
+      "carlsmith"
+    ],
+    "stdout_sha256": "a19df80522f2dcd963d59a01c26675b475aa6cd2e882a168102c7474da4ada44"
+  },
+  {
+    "id": "234",
+    "kind": "recognise",
+    "args": [
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "--recognise",
+      "b.key",
+      "-v"
+    ],
+    "stdout_sha256": "6ba4fc8fea7bf8f6bb4acac3c295077332404fc78c36e023435ae905caf40664"
+  },
+  {
+    "id": "235",
+    "kind": "names",
+    "args": [
+      "-v",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "435ad6f96d80dadbf809376ed68967d07757fe14cd3398bbb306c6fb03a8cdf1"
+  },
+  {
+    "id": "236",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "argentina"
+    ],
+    "stdout_sha256": "e7c6b56e5d0c32f6a32a3f5187ab1f0155d94cc88faaacd52ae0983f48d741b2"
+  },
+  {
+    "id": "237",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "austria"
+    ],
+    "stdout_sha256": "9ee164f46d9e3ba8734fa13c1f0528d2e9d9a7e92a413470f8b9fd6f36e8ca1a"
+  },
+  {
+    "id": "238",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "belgium"
+    ],
+    "stdout_sha256": "e1832bf70f50aed2355a92b82289cd7000f7dd18f81a198ae516e88ac81b03dd"
+  },
+  {
+    "id": "239",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "canada"
+    ],
+    "stdout_sha256": "36c16b370b0c8a03877e6f55e74fcb5e1527a5ceaae519cf8a26b9ea76e33714"
+  },
+  {
+    "id": "240",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "denmark"
+    ],
+    "stdout_sha256": "85d7ff37306c87eae16ef546b25398f7924571a27559224ba8026c7b643ee797"
+  },
+  {
+    "id": "241",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "france"
+    ],
+    "stdout_sha256": "6775fc92ed76644c6ec9c05d11c6466abd202db7400c48dc8ae48c7841060de2"
+  },
+  {
+    "id": "242",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "germany"
+    ],
+    "stdout_sha256": "e9c6d3bce40dbffe0a868fb5a6f5c37150b2d892aab7f772fb55b7c0fb6c5bb2"
+  },
+  {
+    "id": "243",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "hungary"
+    ],
+    "stdout_sha256": "9cbbc9f5ab6853b6a4ccc0ad823fecaf86b4f2ac004d4ad8105837a2d6832662"
+  },
+  {
+    "id": "244",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "india"
+    ],
+    "stdout_sha256": "d392867733638b008f8cd375a24fd26331654861d52a65b7dcd86e3b6170f7ff"
+  },
+  {
+    "id": "245",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "italy"
+    ],
+    "stdout_sha256": "ddc15569d3d42160d40348fee76259e5c39e9dcc68fc2a2d69cc4dda3a1e314c"
+  },
+  {
+    "id": "246",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "luxembourg"
+    ],
+    "stdout_sha256": "ff0f84f93f87c45f3740bb80479943142364036b44e0c2bf539d4203823fdcad"
+  },
+  {
+    "id": "247",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "netherlands"
+    ],
+    "stdout_sha256": "de79291af9630cdd4905160494b9e02ffb534599dc05e3b2920c53cd68d84ee4"
+  },
+  {
+    "id": "248",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "newzealand"
+    ],
+    "stdout_sha256": "e7c6b56e5d0c32f6a32a3f5187ab1f0155d94cc88faaacd52ae0983f48d741b2"
+  },
+  {
+    "id": "249",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "norway"
+    ],
+    "stdout_sha256": "24a3f8a57b7702b77d8ab0590998e87c408e3c75e26f20be3723fae52c2c4bf9"
+  },
+  {
+    "id": "250",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "poland"
+    ],
+    "stdout_sha256": "5e98178fd457ec65d0d541dba8eb62803125a6fb4306931c1d448395fc4a6436"
+  },
+  {
+    "id": "251",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "serbia"
+    ],
+    "stdout_sha256": "b5ff53d67dc597d256748f43cd382668f7d1a3145f1487776ed42ba4cef20f7c"
+  },
+  {
+    "id": "252",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "slovenia"
+    ],
+    "stdout_sha256": "8dbdbf389143fd659c35493a5c37429d12c75be871fde93645244d5befdae700"
+  },
+  {
+    "id": "253",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "spain"
+    ],
+    "stdout_sha256": "42b92da649fc87f25bf93962c0fbf5111087bdcd187d088c3decba4335bc9a43"
+  },
+  {
+    "id": "254",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "sweden"
+    ],
+    "stdout_sha256": "ae5292cacdc2bc5bd47e131bbebb7daef5f58d064800eacdb55e2442ce4200a1"
+  },
+  {
+    "id": "255",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "switzerland"
+    ],
+    "stdout_sha256": "0ffcfdeb6b1c5207e617682e1c07b5a4b7a148926429f5d8de21f9f02af82114"
+  },
+  {
+    "id": "256",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "uk"
+    ],
+    "stdout_sha256": "e8151eb43ecba9106a2aad014963b2144b4d803c76ea9ffa6bfc2ed01f2329cf"
+  },
+  {
+    "id": "257",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "us"
+    ],
+    "stdout_sha256": "76024dd9f683a61cc6810a332e8a28bd7aec9140cb33fbefd4d42d2f557c25f8"
+  },
+  {
+    "id": "258",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "france",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "5d2ec9bc95891eb0107c0cadfa5205b693a3237c24b3b4ca3d697d81709ea455"
+  },
+  {
+    "id": "259",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--country",
+      "US",
+      "-s",
+      "on",
+      "-m",
+      "2",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "6a8f4d05f4fba6606b53d451116891ef820a49f0f5c5578da280304be2a161c2"
+  },
+  {
+    "id": "260",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "-m",
+      "3",
+      "--country",
+      "facebook",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "79c9bad7fabe901a231fa405991c0bda8794edc448805cb2941c9bca110e9bf9"
+  },
+  {
+    "id": "261",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--country",
+      "australia"
+    ]
+  },
+  {
+    "id": "262",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--country",
+      "china"
+    ]
+  },
+  {
+    "id": "263",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--country",
+      "ireland"
+    ]
+  },
+  {
+    "id": "264",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--country",
+      "japan"
+    ]
+  },
+  {
+    "id": "265",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--country",
+      "atlantis"
+    ]
+  },
+  {
+    "id": "266",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_crlf.csv"
+    ],
+    "stdout_sha256": "e225a4f3b07375ecb3cc45e8b741b258574978ada5d52f5f36917d6c822d5b2b"
+  },
+  {
+    "id": "267",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_crlf.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "931d51e4e1461c2b355d2b54cda651fbde386d808ce3480d02c6b70f35095107"
+  },
+  {
+    "id": "268",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_crlf.csv",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "701f8bb28b3463636de611008816de2855320e3fa1ae6a3998032069f715c504"
+  },
+  {
+    "id": "269",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_nonl.csv"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "270",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_nonl.csv",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "271",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_nonl.csv",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "2add2cd2e1f7bf81936cbb5d3d77349325980c73bb1b3439e5484ca0a9b0b6ee"
+  },
+  {
+    "id": "272",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_oddspace.txt"
+    ],
+    "stdout_sha256": "bca6dd59c31b80fbf507866c20eecfafb95945068e1b2d2824a835e155d9cccf"
+  },
+  {
+    "id": "273",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_oddspace.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "9afd3ed7844592fe978d8bb46e763bb2e68888cddc9162658c46bf587165f6c1"
+  },
+  {
+    "id": "274",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_oddspace.txt",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "ddf711e63db0b9a336ebed1ae8c525be5aaa231ac1b3d6678590ab51ce5a3367"
+  },
+  {
+    "id": "275",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_blanklines.txt"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "276",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_blanklines.txt",
+      "-f",
+      "first.last"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "277",
+    "kind": "names",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_blanklines.txt",
+      "-v",
+      "-f",
+      "firstlast"
+    ],
+    "stdout_sha256": "2add2cd2e1f7bf81936cbb5d3d77349325980c73bb1b3439e5484ca0a9b0b6ee"
+  },
+  {
+    "id": "278",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given_dup.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "2",
+      "-f",
+      "fml",
+      "anna"
+    ],
+    "stdout_sha256": "1b1b2ed7698a61776208eab925b99a0823724bbf03df10effeb80b2f1ab12a0d"
+  },
+  {
+    "id": "279",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "5",
+      "-f",
+      "fmlast",
+      ""
+    ],
+    "stdout_sha256": "d0ff7479ba260796ffe72ad200ac45b40d61c3b88bb834eac8f8963012168105"
+  },
+  {
+    "id": "280",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "7",
+      "-f",
+      "fml",
+      ""
+    ],
+    "stdout_sha256": "e802eb167607e758b43eaf10e29300e293c61ee7f25b85b46b40f471d26db71a"
+  },
+  {
+    "id": "281",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "fml",
+      ""
+    ],
+    "stdout_sha256": "ea21e6f98bc9f5ff25dfc0feded1831fa921d2135d3cab803fc1bdceaf3618ad"
+  },
+  {
+    "id": "282",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "11",
+      "-f",
+      "firstmiddlelast",
+      ""
+    ],
+    "stdout_sha256": "513a5fc41f2c2b2f678e356b74d533bef100a7fe83b17ad7e860c53f2897b9e9"
+  },
+  {
+    "id": "283",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "6",
+      "-F",
+      "%givenname-%surname",
+      ""
+    ],
+    "stdout_sha256": "a8374d0651e3d58bc4f66b8c217b54352ba0a9fc541a9e85c1bc94fab5ead118"
+  },
+  {
+    "id": "284",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "9",
+      "-F",
+      "%A-Z%a-z",
+      ""
+    ],
+    "stdout_sha256": "f04ac50bef89525b5912d38a0f19443082a706ce7eb54887759290ba2716c62f"
+  },
+  {
+    "id": "285",
+    "kind": "names",
+    "args": [
+      "x",
+      "key"
+    ],
+    "stdout_sha256": "234c5c4e9f8fb1155acee23222dece587893b40b0d8675d8c5bb67d80d509cb5"
+  },
+  {
+    "id": "286",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "3",
+      "-F",
+      "%a-z",
+      "Bob",
+      "O'Neil"
+    ],
+    "stdout_sha256": "c400d3c13ded28c1f403e5c5273c51d48c6a26045cc2b3bcf714cfe0b415f881"
+  },
+  {
+    "id": "287",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "O'Toole"
+    ],
+    "stdout_sha256": "4279c78cf35cb3e6452c6b4c04fa7e249cc15c063921cc89f0c45ba787dd76e2"
+  },
+  {
+    "id": "288",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last,firstl",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "3",
+      "-C",
+      "true",
+      "x",
+      "key"
+    ],
+    "stdout_sha256": "cef49a26a1c234bfd9d802ded5d09c15f93f994aa465c086f59be0b319e42cbb"
+  },
+  {
+    "id": "289",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "1",
+      "Zed",
+      ""
+    ],
+    "stdout_sha256": "03cbf42750aa37809e34d692c6f22c957c4bb47150bf1a56ce95d5a311271a6b"
+  },
+  {
+    "id": "290",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "false",
+      "-F",
+      "%givenname",
+      "x"
+    ],
+    "stdout_sha256": "57d9b3b589a595f9ae4fb2cfd6439c6b49add6991989c2496994f102e9da171f"
+  },
+  {
+    "id": "291",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "true",
+      "Zed",
+      "smith"
+    ],
+    "stdout_sha256": "2eee2ec4a4ce9041391e6a30d316685064e0b49cb92c06d10e09de9ac35507ed"
+  },
+  {
+    "id": "292",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "2",
+      "Bob"
+    ],
+    "stdout_sha256": "34946f3be7b584020a53a639ac67f70ee43ed470288b81466e267b4f79f2dd58"
+  },
+  {
+    "id": "293",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last",
+      "-C",
+      "true",
+      "anna",
+      "von G",
+      "boom"
+    ],
+    "stdout_sha256": "3e244b9cf3ab2f4216649a85026a8e598cf09924982d49f67acdf6f96c805dc4"
+  },
+  {
+    "id": "294",
+    "kind": "names",
+    "args": [
+      "-C",
+      "true",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "295",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "true",
+      "J.R.",
+      "smith",
+      "boom"
+    ],
+    "stdout_sha256": "becbfad323f85544983f299277d150a52f0fe43b15a2e9c3c9f5e114da604e37"
+  },
+  {
+    "id": "296",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "5",
+      "Bob"
+    ],
+    "stdout_sha256": "836b7d02e3ca72b41360545449e16e3587230dfe5953de78e9eea4aafd18268c"
+  },
+  {
+    "id": "297",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstl,first[4]last[4],last.f",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "false",
+      "anna",
+      "O'Neil"
+    ],
+    "stdout_sha256": "e27a3aaebf0752cbe53c448e09e2efaadf82f7fdf619e81d1479e349eb7ad03d"
+  },
+  {
+    "id": "298",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first",
+      "J.R.",
+      "z"
+    ],
+    "stdout_sha256": "9382aec02f09127fa6d3ec124021856ef0fe8c325b6936cff11ec86a40517e48"
+  },
+  {
+    "id": "299",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "2",
+      "",
+      "smith"
+    ],
+    "stdout_sha256": "8a74d79a013df6d3d5bc9d0adf789837ab8ef576f13fdef9e58831b8d3b2ff2d"
+  },
+  {
+    "id": "300",
+    "kind": "names",
+    "args": [
+      "anna",
+      "z"
+    ],
+    "stdout_sha256": "7070037d6b56bf98f887e05cd3d35699e87b64642a5ade6a9c2807a252db7dfc"
+  },
+  {
+    "id": "301",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL,Last,firstlast[8]",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "26",
+      "-C",
+      "false",
+      "-F",
+      "x%Dy",
+      "de la"
+    ],
+    "stdout_sha256": "8f038b3e5bff5809c930ece4a591b5588dcf5ea72f246b02c50bc5db227f8bfd"
+  },
+  {
+    "id": "302",
+    "kind": "names",
+    "args": [
+      "-@",
+      "@x",
+      "O'Toole"
+    ],
+    "stdout_sha256": "6a541a5d6a9bebe5d944f48d33dda19677ebd07f14310ce5aa8a279063662787"
+  },
+  {
+    "id": "303",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "x",
+      "key"
+    ],
+    "stdout_sha256": "793744f18ac6a94ec70428c63ba93091c580aa2a81ef3e2914120bda469eb072"
+  },
+  {
+    "id": "304",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-@",
+      "@x",
+      "-F",
+      "annakey",
+      "anna",
+      "z"
+    ],
+    "stdout_sha256": "7301d828749fa00f9af97fa5f9c34d0fe72f7afd4295bd202eca1c5d4146ff9a"
+  },
+  {
+    "id": "305",
+    "kind": "names",
+    "args": [
+      "",
+      ""
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "306",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast[8]",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "10",
+      "",
+      "z",
+      "m"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "307",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last,firstl",
+      "x",
+      "z",
+      ""
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "308",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first1,firstlast[8],f.last",
+      "-F",
+      "a%l",
+      "O'Toole",
+      "von G"
+    ],
+    "stdout_sha256": "41f71865ce6dc9022c2f11e7ac7354d6fd656d56c1ecef69235fb7acc30c2448"
+  },
+  {
+    "id": "309",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FirstLast,firstlast",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "1",
+      "Bob",
+      "",
+      "boom"
+    ],
+    "stdout_sha256": "acbabea071d2f6dd5e7b7a5914add459d43096b740616e0cd08b2c253700c277"
+  },
+  {
+    "id": "310",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast,l.first",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "O'Toole",
+      "O'Neil"
+    ],
+    "stdout_sha256": "4c6706a90c516a917ae64fe4e06a09e2359dd938ecedae1b433ceb3ee4608622"
+  },
+  {
+    "id": "311",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "5",
+      "-C",
+      "false",
+      "-@",
+      "0",
+      "Bob",
+      "",
+      "m"
+    ],
+    "stdout_sha256": "902dc63d37bb03d093fa292be86433edcb552a41e4298077a96f82223e937b65"
+  },
+  {
+    "id": "312",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl",
+      "-@",
+      "0",
+      "-F",
+      "annakey",
+      "Bob",
+      "von G",
+      "q"
+    ],
+    "stdout_sha256": "8fda8beb4556574c8425e41447e845c9d9f1ae4bd65c688a6466be1ad89c28f7"
+  },
+  {
+    "id": "313",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "O'Toole",
+      "O'Neil"
+    ],
+    "stdout_sha256": "378d63fd6b8d893c4c17685aed93dda10f4817901d55e2bcf9b82c312236926f"
+  },
+  {
+    "id": "314",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last,fmlast",
+      "de la",
+      "key",
+      "boom"
+    ],
+    "stdout_sha256": "8480aae63e52fb3166e47bdc65f5dde1626f87b1e7506a4a5d38a50a241f070c"
+  },
+  {
+    "id": "315",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "10",
+      "-@",
+      "@x",
+      "-F",
+      "%DD",
+      "de la"
+    ],
+    "stdout_sha256": "205a73e5a84b63e5430910538096301369b43e852e1315d8bb2d739975544c45"
+  },
+  {
+    "id": "316",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "5",
+      "-F",
+      "x%Dy",
+      "Bob",
+      "von G",
+      "boom"
+    ],
+    "stdout_sha256": "1ef214421b9304669fcdbbb96e448bb8b0848b5972fb6c52c616c39b28c46601"
+  },
+  {
+    "id": "317",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast",
+      "-F",
+      "%a-z",
+      "Bob"
+    ],
+    "stdout_sha256": "c400d3c13ded28c1f403e5c5273c51d48c6a26045cc2b3bcf714cfe0b415f881"
+  },
+  {
+    "id": "318",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first1,fl,flast",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%F-%L",
+      "m",
+      ""
+    ],
+    "stdout_sha256": "2979b989133c61f4bf15b6427c8efaa03bbdbd7dce383976be75842884cd0f0a"
+  },
+  {
+    "id": "319",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first.last,lastf",
+      "J.R."
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "320",
+    "kind": "names",
+    "args": [
+      "Zed"
+    ],
+    "stdout_sha256": "e4c81d6e661b430d874616bb2f2bbf7d5546cfd34097840a4a077991e80ef0dc"
+  },
+  {
+    "id": "321",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first1,Last",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "10",
+      "m",
+      "von G"
+    ],
+    "stdout_sha256": "a8ac4ccf13e225f99504549dea6807128a7fb60ff5be7bf3832cfd90bb1e5551"
+  },
+  {
+    "id": "322",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lastf,first[4]last[4]",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-@",
+      ".corp",
+      "x",
+      "z"
+    ],
+    "stdout_sha256": "4be52bd063890b739d219448151539467c18a3434cbf2d3b07cc8e8355033ac8"
+  },
+  {
+    "id": "323",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "5",
+      "x",
+      "z"
+    ],
+    "stdout_sha256": "37601a51e460765957a047b45174f39171a414e17a40e60c7660b320e96046a4"
+  },
+  {
+    "id": "324",
+    "kind": "names",
+    "args": [
+      "m"
+    ],
+    "stdout_sha256": "01a60e35df88d8b49546cb3f8f4ba4f406870f9b8e1f394c9d48ab73548d748d"
+  },
+  {
+    "id": "325",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      ""
+    ],
+    "stdout_sha256": "3de35782add550ea72db725a2d5eb7bfb5bfdeb771fdac3786d23795e5b06a2a"
+  },
+  {
+    "id": "326",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL,flast",
+      "de la"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "327",
+    "kind": "names",
+    "args": [
+      "de la"
+    ],
+    "stdout_sha256": "1fb915a71c052276bcfb95a8ca4b75c05545c489f05d66fed58a86af497d5b42"
+  },
+  {
+    "id": "328",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "2",
+      "anna",
+      "smith",
+      ""
+    ],
+    "stdout_sha256": "9319ab2147c3ec6b623d4b1245b1209e6558f9bd0b804641e5c6630654bc6f7e"
+  },
+  {
+    "id": "329",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "2",
+      "O'Toole"
+    ],
+    "stdout_sha256": "20689a72cbe786d57801a214012a4f36e556a80a9bbdc623276fbe30769f33f0"
+  },
+  {
+    "id": "330",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%DD",
+      "anna",
+      "z"
+    ],
+    "stdout_sha256": "d2ebe60063f7bd3db44868dedc78acb96af484e1286f268208f6d76deb23dc14"
+  },
+  {
+    "id": "331",
+    "kind": "names",
+    "args": [
+      "de la",
+      "O'Neil",
+      ""
+    ],
+    "stdout_sha256": "1fb915a71c052276bcfb95a8ca4b75c05545c489f05d66fed58a86af497d5b42"
+  },
+  {
+    "id": "332",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL",
+      "anna",
+      "z"
+    ],
+    "stdout_sha256": "e2b02a2cf2e5c64515cb686e1d1a8cab62efd6af48b2ef6486ecafc7ffd35dff"
+  },
+  {
+    "id": "333",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast,fml",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "true",
+      "Zed",
+      "z",
+      ""
+    ],
+    "stdout_sha256": "4566a58f44c9d083a7ca6f617dcd0c3e2c0cb66e6c4ff843c8a9b6a9da3d13ad"
+  },
+  {
+    "id": "334",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "10",
+      "",
+      "O'Neil",
+      "m"
+    ],
+    "stdout_sha256": "6f7dc817db3d1afe0a6a372724a5a9eedf9aee4824615a3373915e92ca79d4ac"
+  },
+  {
+    "id": "335",
+    "kind": "names",
+    "args": [
+      "-f",
+      "Last,last.f,lastf",
+      "de la",
+      "O'Neil",
+      "m"
+    ],
+    "stdout_sha256": "ba2c4d1b83e546c4ed705f10018b752e0f85edb66038204d63691d1daf3e2329"
+  },
+  {
+    "id": "336",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "3",
+      "anna",
+      ""
+    ],
+    "stdout_sha256": "b866ff781609d2117263f3234b20468eb5b52e2eeeb165a01151464222289569"
+  },
+  {
+    "id": "337",
+    "kind": "names",
+    "args": [
+      "x"
+    ],
+    "stdout_sha256": "73cb3858a687a8494ca3323053016282f3dad39d42cf62ca4e79dda2aac7d9ac"
+  },
+  {
+    "id": "338",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "5",
+      "Bob",
+      "smith"
+    ],
+    "stdout_sha256": "6b81294aeee9b46836bb7e67441629fb9cfa57d95468ed277e12a656f2cbbda0"
+  },
+  {
+    "id": "339",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "10",
+      "-@",
+      "0",
+      "-F",
+      "ak",
+      "anna",
+      "",
+      ""
+    ],
+    "stdout_sha256": "1b3d7a49a0459cb24fe694961039158de409909697434d8b940243cd6fff2081"
+  },
+  {
+    "id": "340",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last,FirstLast",
+      "Bob",
+      "smith"
+    ],
+    "stdout_sha256": "b316abc4b9eeea1bfb6ae4d43504e4cd2266afe3090aa94ca7a2613b275e8f46"
+  },
+  {
+    "id": "341",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "false",
+      "-F",
+      "%a-z",
+      "anna",
+      "smith",
+      "q"
+    ],
+    "stdout_sha256": "e2675e968ab5c9e5b16c816e41f4a294e3880ef8122ed5207218658c64716ede"
+  },
+  {
+    "id": "342",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "10",
+      "-C",
+      "true",
+      "Bob",
+      "smith"
+    ],
+    "stdout_sha256": "6aa9dc956df4ac92390878d248406a7ed37712402158ce4bdf0bafe7f1a459e0"
+  },
+  {
+    "id": "343",
+    "kind": "names",
+    "args": [
+      "-f",
+      "flast,firstl,firstmiddlelast",
+      "O'Toole",
+      "von G"
+    ],
+    "stdout_sha256": "d47e26762e85a95d10822588bb25249e6e6b7c405f2cecb5d0535baf4bfeeafe"
+  },
+  {
+    "id": "344",
+    "kind": "names",
+    "args": [
+      "Bob"
+    ],
+    "stdout_sha256": "1a1707bb54e5fb4deddd19f07adcb4f1e022ca7879e3c8348da8d4fa496ae8e2"
+  },
+  {
+    "id": "345",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "5",
+      "J.R.",
+      "von G",
+      "boom"
+    ],
+    "stdout_sha256": "b23b82e030deae3b98b5e667484bfa891493aaef76f9504c0a7edce63b71c62e"
+  },
+  {
+    "id": "346",
+    "kind": "names",
+    "args": [
+      "x"
+    ],
+    "stdout_sha256": "73cb3858a687a8494ca3323053016282f3dad39d42cf62ca4e79dda2aac7d9ac"
+  },
+  {
+    "id": "347",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FL",
+      "O'Toole"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "348",
+    "kind": "names",
+    "args": [
+      "-f",
+      "flast,lastf,fmlast",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "2",
+      "-F",
+      "%f.%l",
+      "de la",
+      "key",
+      ""
+    ],
+    "stdout_sha256": "9818eddd45c2486f0f29f0c8b329ea65cabbe034b44cf8823509369a33a7a4d4"
+  },
+  {
+    "id": "349",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast,first",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "1",
+      "-F",
+      "a%l",
+      "Bob",
+      "z"
+    ],
+    "stdout_sha256": "9b08e9baa4c5a94733938a3bcde9e76383877123308f406a92d6dcad704f80af"
+  },
+  {
+    "id": "350",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "true",
+      "-@",
+      "@x",
+      "x",
+      "key",
+      ""
+    ],
+    "stdout_sha256": "86252a0cb727b271abc8cd1ae856e3a0add5dc4e68ca5b833f0911affaf96027"
+  },
+  {
+    "id": "351",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fml,first,first.last",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "10",
+      "-C",
+      "true",
+      "O'Toole",
+      "smith",
+      "boom"
+    ],
+    "stdout_sha256": "52813c08c8c399650afa90622d5469a9050644a74fb5eaed1cabf4b2e89b4a73"
+  },
+  {
+    "id": "352",
+    "kind": "names",
+    "args": [
+      "anna"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "353",
+    "kind": "names",
+    "args": [
+      ""
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "354",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "Z%F",
+      "de la",
+      "smith",
+      ""
+    ],
+    "stdout_sha256": "773240558fcb91de7b9f8c841fb248e8aac1acf9904e2e5f27dc199125057ec4"
+  },
+  {
+    "id": "355",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "Bob",
+      "key"
+    ],
+    "stdout_sha256": "028ed4eeda1aadd6c2676229728637a01050b25f64e29bad8aaa078fbc6d346e"
+  },
+  {
+    "id": "356",
+    "kind": "names",
+    "args": [
+      "-f",
+      "last.first,FL,first",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "3",
+      "-C",
+      "true",
+      "Bob",
+      "von G",
+      "q"
+    ],
+    "stdout_sha256": "f2968641b07215ded9c3e652e0fa6c750883f1312768d7484e86eff2dc77cec5"
+  },
+  {
+    "id": "357",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first[4]last[4]",
+      "anna",
+      "z",
+      "boom"
+    ],
+    "stdout_sha256": "0e5b90563e86b53adffe1f6af1f1d85c8b1a83c4618d2803336d71c7c3359d07"
+  },
+  {
+    "id": "358",
+    "kind": "names",
+    "args": [
+      "m",
+      "key"
+    ],
+    "stdout_sha256": "35d79561d2ec08b29a9853eba448cda6c6bbd656cc79317b49b1f758842bf1f4"
+  },
+  {
+    "id": "359",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast",
+      ""
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "360",
+    "kind": "names",
+    "args": [
+      "-f",
+      "Last",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "26",
+      "anna",
+      "von G"
+    ],
+    "stdout_sha256": "b4e853e6274b71160342e92b6189f59070f5608318c2f561f7122adcff9b9f54"
+  },
+  {
+    "id": "361",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "de la",
+      "von G"
+    ],
+    "stdout_sha256": "91cf0313c82d365032e82f6744135f8e331a0894a65cce882fbb9c7c0ae63084"
+  },
+  {
+    "id": "362",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last,Last",
+      "J.R."
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "363",
+    "kind": "names",
+    "args": [
+      "-f",
+      "f.last,firstl,first.last",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "26",
+      "x",
+      "O'Neil",
+      ""
+    ],
+    "stdout_sha256": "d98d61e13bdab1e2cf886918776fa824dd23cba7efa3196e99aa413b5f7511bd"
+  },
+  {
+    "id": "364",
+    "kind": "names",
+    "args": [
+      "-f",
+      "lfirst,first[4]last[4],FirstLast",
+      "Zed",
+      "key"
+    ],
+    "stdout_sha256": "7c2aa8eadc72900d61d73a37bd096f1e142d408a5e6f32501eb8c01176241b79"
+  },
+  {
+    "id": "365",
+    "kind": "names",
+    "args": [
+      "J.R."
+    ],
+    "stdout_sha256": "9382aec02f09127fa6d3ec124021856ef0fe8c325b6936cff11ec86a40517e48"
+  },
+  {
+    "id": "366",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "true",
+      "-@",
+      "0",
+      "anna",
+      "O'Neil"
+    ],
+    "stdout_sha256": "395de7469a56a7e13a34a30809180cb27db28b2454cb34c7801093b9b64a944a"
+  },
+  {
+    "id": "367",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "1",
+      "-@",
+      "@x",
+      "anna"
+    ],
+    "stdout_sha256": "c210c70279eac3b7fbec91573f5114c1110c25d2fd52c901b68375e8b25f2fa9"
+  },
+  {
+    "id": "368",
+    "kind": "names",
+    "args": [
+      "x",
+      "",
+      ""
+    ],
+    "stdout_sha256": "73cb3858a687a8494ca3323053016282f3dad39d42cf62ca4e79dda2aac7d9ac"
+  },
+  {
+    "id": "369",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl,lfirst,first",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "26",
+      "Bob"
+    ],
+    "stdout_sha256": "d755be24e19998d04a44348fb426be700e6d17ad152b9ab09dc08bc4f4bc6c04"
+  },
+  {
+    "id": "370",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "false",
+      "Bob",
+      "smith"
+    ],
+    "stdout_sha256": "c5e051aa6042858321e0c1621cfdab42a13164de6f7aa8751202a5f939081094"
+  },
+  {
+    "id": "371",
+    "kind": "names",
+    "args": [
+      "-f",
+      "fl,Last,FLast",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-C",
+      "false",
+      "-@",
+      "0",
+      "O'Toole",
+      "smith"
+    ],
+    "stdout_sha256": "6e09f144e695f77307902fa468410f166031df0bdaafea6a84dbffe9c5421dc0"
+  },
+  {
+    "id": "372",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast[8],last.first,fml",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "J.R."
+    ],
+    "stdout_sha256": "7263f9d81b43df4a96ce7187a23d34b2d9794a43f6808ba0ae1cd01e41ccf42a"
+  },
+  {
+    "id": "373",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last,last.f,lfirst",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "2",
+      "x",
+      "key"
+    ],
+    "stdout_sha256": "41ddd228e965a6421fd5eb577a42994ca2ab8f4d53783442cbc3e1e9ad88dfe9"
+  },
+  {
+    "id": "374",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "1",
+      "Bob",
+      "key"
+    ],
+    "stdout_sha256": "eb36e7372929dc33c1be88b6449e352589ea94c94d03b6dd3a3061f3c18376a6"
+  },
+  {
+    "id": "375",
+    "kind": "names",
+    "args": [
+      "-f",
+      "",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "376",
+    "kind": "names",
+    "args": [
+      "-f",
+      ",",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "377",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first,",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "378",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first,,",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "379",
+    "kind": "names",
+    "args": [
+      "-f",
+      "first,last",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "78ffdae304e8286226148a7ff9b530aa9eaa66004f547f3ed1406993013f0df1"
+  },
+  {
+    "id": "380",
+    "kind": "error",
+    "args": [
+      "-f",
+      ",first",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "381",
+    "kind": "error",
+    "args": [
+      "-f",
+      "first,,last",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "382",
+    "kind": "error",
+    "args": [
+      "-f",
+      " first",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "383",
+    "kind": "error",
+    "args": [
+      "-f",
+      "first, last",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "384",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%givenname",
+      ""
+    ],
+    "stdout_sha256": "823974851e818cf5c6ce3ff15ff33162e42bc6cb291c832623419b091a1c19ee"
+  },
+  {
+    "id": "385",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%surname",
+      ""
+    ],
+    "stdout_sha256": "9243c1b2cca5b15db4fc4f3e88a748d6056646e5f353fc64206892b24dff6ca2"
+  },
+  {
+    "id": "386",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-F",
+      "%Givenname%Surname",
+      ""
+    ],
+    "stdout_sha256": "7f31c7e4971d12c779df3faedfdcc1e88eb366cc3559d8be769bda28b4a0cbb4"
+  },
+  {
+    "id": "387",
+    "kind": "names",
+    "args": [
+      "-v",
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-m",
+      "3",
+      "-F",
+      "%givenname-%surname",
+      ""
+    ],
+    "stdout_sha256": "2e19e20e00bb3c3b3a008cff091b02e6966eaf3afd7ef91a3f4131dc37eaf9c3"
+  },
+  {
+    "id": "388",
+    "kind": "names",
+    "args": [
+      "-v",
+      "-F",
+      "%f%l",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "663e4eccfd27f30e7aa75da26bfd49b8af05e99119599eec64e94e30825cec42"
+  },
+  {
+    "id": "389",
+    "kind": "names",
+    "args": [
+      "-a",
+      "-F",
+      "anna.key",
+      "-s",
+      "on",
+      "-m",
+      "2",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt"
+    ],
+    "stdout_sha256": "02ef6629e13d33320984d136c0961b5212e82d7d59bdd0c8bb61948a10b5b2b9"
+  },
+  {
+    "id": "390",
+    "kind": "names",
+    "args": [
+      "-F",
+      "x%f%l%D",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "id": "391",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given_nonl.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "firstlast",
+      "anna"
+    ],
+    "stdout_sha256": "4a2d9a109dad37c781fd01e58957931c744761c2dae40b782d4d7e06e25530c5"
+  },
+  {
+    "id": "392",
+    "kind": "error",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family_nonl.txt",
+      "-f",
+      "firstlast",
+      "anna"
+    ]
+  },
+  {
+    "id": "393",
+    "kind": "error",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given_nonl.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "first",
+      ""
+    ]
+  },
+  {
+    "id": "394",
+    "kind": "error",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family_nonl.txt",
+      "-f",
+      "last",
+      ""
+    ]
+  },
+  {
+    "id": "395",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "last",
+      "anna"
+    ],
+    "stdout_sha256": "75f9232a72ef60de6f6797dd4b41be482716f6d2d5ae96bdb534d8e705dd1a24"
+  },
+  {
+    "id": "396",
+    "kind": "error",
+    "args": [
+      "-i",
+      "tests/cli/fixtures/input_nodelim.txt"
+    ]
+  },
+  {
+    "id": "397",
+    "kind": "names",
+    "args": [
+      "--gi",
+      "tests/cli/fixtures/given.txt",
+      "anna"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "398",
+    "kind": "names",
+    "args": [
+      "--suf",
+      ".x",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "327ba975d77ce88e95ae7760db56950797abaa471c4dc01979bb4f2360ac97d4"
+  },
+  {
+    "id": "399",
+    "kind": "names",
+    "args": [
+      "--case-",
+      "true",
+      "-f",
+      "FirstLast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "400",
+    "kind": "listfmt",
+    "args": [
+      "--list",
+      "anna"
+    ],
+    "stdout_sha256": "cf99f7c2bf025d56609cc418c0d6cabea981112f0c1e2a273ad7f9860b314278"
+  },
+  {
+    "id": "401",
+    "kind": "names",
+    "args": [
+      "--verb",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "cae3c27c66f21f1257e26ab49eead8f560d7531d8109ddc9ddb66abfbf49b9e2"
+  },
+  {
+    "id": "402",
+    "kind": "usage",
+    "args": [
+      "--hel"
+    ]
+  },
+  {
+    "id": "403",
+    "kind": "names",
+    "args": [
+      "--max",
+      "2",
+      "anna"
+    ],
+    "stdout_sha256": "007d3c1d328d83ebe60e481fc4f79eb1e260edd960a1eb6341ef330a0c8126a6"
+  },
+  {
+    "id": "404",
+    "kind": "names",
+    "args": [
+      "--countr",
+      "france",
+      "-a"
+    ],
+    "stdout_sha256": "6775fc92ed76644c6ec9c05d11c6466abd202db7400c48dc8ae48c7841060de2"
+  },
+  {
+    "id": "405",
+    "kind": "error",
+    "args": [
+      "--f",
+      "first",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "406",
+    "kind": "error",
+    "args": [
+      "--auto=false"
+    ]
+  },
+  {
+    "id": "407",
+    "kind": "error",
+    "args": [
+      "--no-auto",
+      "--country",
+      "france",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "408",
+    "kind": "error",
+    "args": [
+      "--formatsss",
+      "x"
+    ]
+  },
+  {
+    "id": "409",
+    "kind": "names",
+    "args": [
+      "-F",
+      "annakey",
+      "-F",
+      "%f-%l",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "34a54604620fc58545b1e946f08ffa4ffc8f072c7336f4d18b954a970c36002f"
+  },
+  {
+    "id": "410",
+    "kind": "names",
+    "args": [
+      "-F",
+      "%f.%l",
+      "-f",
+      "custom",
+      "anna",
+      "key"
+    ],
+    "stdout_sha256": "8c906e313075b0a700abc479ea9571a757410d04a19ef8157c88ad0e3232a71e"
+  },
+  {
+    "id": "411",
+    "kind": "error",
+    "args": [
+      "-f",
+      "custom",
+      "-F",
+      "%f.%l",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "412",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "names/facebook/firstnames-top100.txt",
+      "--family-names",
+      "names/facebook/lastnames-top100.txt",
+      "-m",
+      "0x10",
+      "-f",
+      "firstlast",
+      ""
+    ],
+    "stdout_sha256": "00eb478b9f9b05b42260198970c1fb7f0d00038bf7e8f6f73be37d961608a46d"
+  },
+  {
+    "id": "413",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "names/facebook/firstnames-top100.txt",
+      "--family-names",
+      "names/facebook/lastnames-top100.txt",
+      "-m",
+      "010",
+      "-f",
+      "firstlast",
+      ""
+    ],
+    "stdout_sha256": "64a90198be3dbfa280d2be399461ec696313c61758e8d0228201c3d3007e1a75"
+  },
+  {
+    "id": "414",
+    "kind": "names",
+    "args": [
+      "-s",
+      "on",
+      "--given-names",
+      "names/facebook/firstnames-top100.txt",
+      "--family-names",
+      "names/facebook/lastnames-top100.txt",
+      "-m",
+      "1_0",
+      "-f",
+      "firstlast",
+      ""
+    ],
+    "stdout_sha256": "b8fcc1cb749280ad785ec41934fad23ccef07fe698a1bddc8816de64874d5eee"
+  },
+  {
+    "id": "415",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FLast",
+      "-s",
+      "on"
+    ],
+    "stdout_sha256": "c5a0a677f5064c555fb880db230f0669b78c5031bfc7d36f738c1d9d8d782541"
+  },
+  {
+    "id": "416",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FL",
+      "-s",
+      "on"
+    ],
+    "stdout_sha256": "1043aa043d3481843eaf259fec5e2364b2e72e16a43885b42f493de1b51067a6"
+  },
+  {
+    "id": "417",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FirstLast",
+      "-s",
+      "on"
+    ],
+    "stdout_sha256": "3de35782add550ea72db725a2d5eb7bfb5bfdeb771fdac3786d23795e5b06a2a"
+  },
+  {
+    "id": "418",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "First.Last",
+      "-s",
+      "on"
+    ],
+    "stdout_sha256": "41169a8ecf5b68a4510a7daa9e1c5442c3130a1abec9539a95e2edfd738a5cfe"
+  },
+  {
+    "id": "419",
+    "kind": "names",
+    "args": [
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "Last",
+      "-s",
+      "on"
+    ],
+    "stdout_sha256": "75f9232a72ef60de6f6797dd4b41be482716f6d2d5ae96bdb534d8e705dd1a24"
+  },
+  {
+    "id": "420",
+    "kind": "names",
+    "args": [
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "3a0d9f271b7cfb0214dc073aeeabbf2804d22a732e471edbe4818ac768df3038"
+  },
+  {
+    "id": "421",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "34c0a9854050c59b8a1603784fbebe79caea5b9cbc4415449d5c1be588d49888"
+  },
+  {
+    "id": "422",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-f",
+      "FLast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "5e87ca1df6d9c972baa5e4de1e39cc26afa77a44981681441d46eb3bdad55336"
+  },
+  {
+    "id": "423",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-f",
+      "firstlast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "e86c20afe77ea3723560f7860af3ea3c4f51d8b78665e74148fee47b2a196da1"
+  },
+  {
+    "id": "424",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-f",
+      "FirstLast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "3801cf2a358c1250b928d277f6847ad5695d7eac900157686a3652372bf3ff16"
+  },
+  {
+    "id": "425",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt"
+    ],
+    "stdout_sha256": "0063eacfb83cc4b53a962c0a29ee879cf0ee574106e325e8c8f761dce5c12499"
+  },
+  {
+    "id": "426",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-a",
+      "--given-names",
+      "tests/cli/fixtures/given.txt",
+      "--family-names",
+      "tests/cli/fixtures/family.txt",
+      "-f",
+      "FLast",
+      "-s",
+      "on"
+    ],
+    "stdout_sha256": "0887a4527ec17a1416ed9e21764a39af48e03069c16555b1423aee20a8214370"
+  },
+  {
+    "id": "427",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-@",
+      "@EXAMPLE.COM",
+      "-f",
+      "FLast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "2da045ea44df63de82fbd8eaeca44786079bc6141bf8639cca75d269b3e07971"
+  },
+  {
+    "id": "428",
+    "kind": "names",
+    "args": [
+      "-@",
+      "@EXAMPLE.COM",
+      "-f",
+      "FLast",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "d1bc87a1f5ceb9be6db0d48f81258272f330abdabcb98b6348ca9e114cafe37a"
+  },
+  {
+    "id": "429",
+    "kind": "names",
+    "args": [
+      "-@",
+      "@example.com",
+      "-f",
+      "First.Last",
+      "Anna",
+      "Key"
+    ],
+    "stdout_sha256": "a613c0a0460d8af66b5dd0282252d02835f6b791da3a8b2be04517067643027a"
+  },
+  {
+    "id": "430",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FLast",
+      "ß",
+      "Key"
+    ],
+    "stdout_sha256": "44c3f8d836c38314223554bf33cba6e2a3de95fc3d019553b91afe09a19a981b"
+  },
+  {
+    "id": "431",
+    "kind": "names",
+    "args": [
+      "-f",
+      "FirstLast",
+      "ß",
+      "Key"
+    ],
+    "stdout_sha256": "44c3f8d836c38314223554bf33cba6e2a3de95fc3d019553b91afe09a19a981b"
+  },
+  {
+    "id": "432",
+    "kind": "names",
+    "args": [
+      "-f",
+      "First.Last",
+      "Élodie",
+      "Key"
+    ],
+    "stdout_sha256": "52cfb5f8102b734a77bd8cd41ddd1d0ec70bb9e7a677610b7ad8d844a4027ebc"
+  },
+  {
+    "id": "433",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-f",
+      "FLast",
+      "ß",
+      "Key"
+    ],
+    "stdout_sha256": "0db4246617481247cec52133c7acbf7a519a4929cd33c2f1807ee4409ed64b83"
+  },
+  {
+    "id": "434",
+    "kind": "names",
+    "args": [
+      "-C",
+      "false",
+      "-f",
+      "First.Last",
+      "Élodie",
+      "Key"
+    ],
+    "stdout_sha256": "eb643da3b018d89737a592f1075f89c5214aa89089742659d83a12d3fcdb159c"
+  },
+  {
+    "id": "435",
+    "kind": "names",
+    "args": [
+      "-f",
+      "firstlast[8]",
+      "ß",
+      "Key"
+    ],
+    "stdout_sha256": "1aae21c8d8592ed939a20706af2dcfa1ee32aaa8729b675feaa92d123ee7715b"
+  },
+  {
+    "id": "436",
+    "kind": "usage",
+    "args": []
+  },
+  {
+    "id": "437",
+    "kind": "usage",
+    "args": [
+      "a",
+      "b",
+      "c",
+      "d"
+    ]
+  },
+  {
+    "id": "438",
+    "kind": "usage",
+    "args": [
+      "--help"
+    ]
+  },
+  {
+    "id": "439",
+    "kind": "error",
+    "args": [
+      "-i",
+      "/nonexistent/nope.txt"
+    ]
+  },
+  {
+    "id": "440",
+    "kind": "error",
+    "args": [
+      "-f",
+      "nosuch",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "441",
+    "kind": "error",
+    "args": [
+      "-s",
+      "bogus",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "442",
+    "kind": "error",
+    "args": [
+      "-C",
+      "maybe",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "443",
+    "kind": "error",
+    "args": [
+      "-m",
+      "0",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "444",
+    "kind": "error",
+    "args": [
+      "-m",
+      "-3",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "445",
+    "kind": "error",
+    "args": [
+      "-m",
+      "abc",
+      "anna",
+      "key"
+    ]
+  },
+  {
+    "id": "446",
+    "kind": "error",
+    "args": [
+      "--badopt"
+    ]
+  },
+  {
+    "id": "447",
+    "kind": "error",
+    "args": [
+      "-Z"
+    ]
+  },
+  {
+    "id": "448",
+    "kind": "error",
+    "args": [
+      "-C"
+    ]
+  },
+  {
+    "id": "449",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--country",
+      "china"
+    ]
+  },
+  {
+    "id": "450",
+    "kind": "error",
+    "args": [
+      "-a",
+      "--country",
+      "atlantis"
+    ]
+  },
+  {
+    "id": "451",
+    "kind": "error",
+    "args": [
+      "--bare-delim",
+      "x"
+    ]
+  }
+]

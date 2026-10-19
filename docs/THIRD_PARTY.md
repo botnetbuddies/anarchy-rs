@@ -1,31 +1,20 @@
-# Third-party material
+# Credits and third-party material
 
-## Vendored Username Anarchy
+## Username Anarchy
 
-`vendor/username-anarchy/` contains the unmodified Ruby tool and its wordlists.
-The parity tests use it as their oracle. The release bundle copies its
-`names/` directory beside the Rust executable.
+anarchy-rs is a Rust port of [Username Anarchy](https://github.com/urbanadventurer/username-anarchy)
+0.6 by Andrew Horton (urbanadventurer). The original project's MIT copyright
+notice is preserved in [LICENSE](../LICENSE).
 
-- Project: [Username Anarchy](https://github.com/urbanadventurer/username-anarchy)
-- Author: Andrew Horton (urbanadventurer)
-- Version: 0.6
-- Revision: `e0631915ee90afb7ffcabf7900043927ef2f8934`
-- License: MIT, in `vendor/username-anarchy/LICENSE`; its notice is also retained
-  in the release bundle's `LICENSE`.
-
-The upstream tree keeps its own documentation and packaging files for provenance.
-Only its `.git` metadata is omitted.
+The wordlists in `names/` and the three `test-names*.txt` input fixtures come
+from upstream revision `e0631915ee90afb7ffcabf7900043927ef2f8934`. Wordlist
+contents are unchanged. Their upstream source groups are Facebook,
+PublicProfiler, Familypedia and forum usernames.
 
 ## Rust dependencies
 
-| Crate | Version | License |
-|---|---|---|
-| [`rustc-hash`](https://crates.io/crates/rustc-hash) | 2.x | Apache-2.0 OR MIT |
+| Crate | License |
+|---|---|
+| [rustc-hash](https://crates.io/crates/rustc-hash) | Apache-2.0 OR MIT |
 
-Everything else uses the Rust standard library.
-
-## Test / benchmark tooling (not shipped)
-
-* `hyperfine` (Apache-2.0 OR MIT) - benchmark timing.
-* Python 3 (PSF-2.0) - parity harness and benchmark driver.
-* Ruby (Ruby license / BSD-2-Clause) - runs the oracle.
+Other runtime functionality uses the Rust standard library.

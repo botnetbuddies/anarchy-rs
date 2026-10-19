@@ -97,7 +97,7 @@ fn worker_error_disconnects_producers_before_join() {
     people[0] = person_of("anna", None, None);
     let fixture = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/tests/parity/fixtures/given_nonl.txt"
+        "/tests/cli/fixtures/given_nonl.txt"
     );
     let ctx = Ctx::new(fixture.into(), fixture.into());
     let plugins: Vec<_> = fmt::static_plugins()

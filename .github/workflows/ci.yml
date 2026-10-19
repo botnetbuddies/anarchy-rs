@@ -12,8 +12,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  parity:
-    name: Parity gate + static build
+  check:
+    name: Tests and static build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Formatting, lint, documentation and unit tests
+      - name: Formatting, lint, documentation and tests
         run: make check
 
       - name: Build release bundle
@@ -35,7 +35,7 @@ jobs:
       - name: Verify the binary is fully static
         run: |
           set -euo pipefail
-          BIN=target/x86_64-unknown-linux-musl/release/username-anarchy-rs
+          BIN=dist/anarchy-rs
           file "$BIN"
           if readelf -l "$BIN" | grep -q INTERP; then
             echo "::error::binary has a PT_INTERP segment (not statically linked)"
@@ -53,27 +53,24 @@ jobs:
       - name: Smoke test
         run: |
           set -euo pipefail
-          BIN=target/x86_64-unknown-linux-musl/release/username-anarchy-rs
+          BIN=dist/anarchy-rs
           "$BIN" anna key | grep -qx anna
           "$BIN" --country france -a | grep -qx michel
           "$BIN" --list-formats | grep -q firstlast
-          "$BIN" -s on --given-names vendor/username-anarchy/names/facebook/firstnames-top100.txt \
-                        --family-names vendor/username-anarchy/names/facebook/lastnames-top100.txt \
+          "$BIN" -s on --given-names names/facebook/firstnames-top100.txt \
+                        --family-names names/facebook/lastnames-top100.txt \
                         -f firstlast "" | head -1 | grep -q .
 
-      - name: Parity gate against the Ruby oracle
-        run: make test
-
-      - name: Forced-parallel parity gate
+      - name: Parallel CLI tests
         run: make test
         env:
           USERNAME_ANARCHY_THREADS: "4"
           USERNAME_ANARCHY_MIN_PARALLEL: "0"
 
-      - name: Upload the static binary
+      - name: Upload release bundle
         uses: actions/upload-artifact@v4
         with:
-          name: username-anarchy-x86_64-unknown-linux-musl
-          path: target/x86_64-unknown-linux-musl/release/username-anarchy-rs
+          name: anarchy-rs-x86_64-unknown-linux-musl
+          path: dist/
           if-no-files-found: error
           retention-days: 14

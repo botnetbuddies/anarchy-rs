@@ -1,7 +1,8 @@
 # Compatibility with Username Anarchy
 
-The Rust port follows the output sets produced by Username Anarchy 0.6.
-These notes describe the edge cases covered by the Ruby oracle tests.
+anarchy-rs follows the command-line features and generated usernames of
+Username Anarchy 0.6. These notes describe inherited behavior and intentional
+differences covered by regression tests.
 
 ## Preserved quirks
 
@@ -44,15 +45,7 @@ Documented rather than hidden:
 * **Wordlist without a trailing newline.** Ruby's `readlines.map { downcase!;
   strip! }` inserts `nil` for the last line and later raises. Rust reports the
   same condition as an error and exits non-zero.
-* **Output ordering.** The compatibility gate compares sets of lines. Within
-  the Rust port, numbered batches preserve serial generation order, including
-  `-v` comments, when running on multiple cores.
 
-## Ruby oracle
-
-Tests use the unmodified Ruby source in `vendor/username-anarchy/`. They run
-both stock Ruby and the shim in `tests/parity/oracle_compat.rb`. Ruby 3.2 removed
-`Object#=~`, which the original calls on arrays during substitution; the shim
-restores that method. Stock Ruby is the oracle when it succeeds, and the shim
-is used when stock Ruby crashes. The harness checks that both agree wherever
-stock Ruby succeeds.
+Serial and parallel generation use the same output order, including verbose
+comments. The CLI fixtures check exact output bytes; see
+[tests/cli](../tests/cli/README.md).

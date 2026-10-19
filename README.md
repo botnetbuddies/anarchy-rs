@@ -1,43 +1,41 @@
 # anarchy-rs
 
-A Rust port of [Username Anarchy](https://github.com/urbanadventurer/username-anarchy).
-Give it a name or a file of names and it generates likely usernames, such as
-`anna.key`, `akey` and `annakey`.
+A Rust port of [Username Anarchy](https://github.com/urbanadventurer/username-anarchy)
+by Andrew Horton. Generate likely usernames from a person's name, a file of
+names or the included country wordlists.
 
-It keeps the original flags, 24 built-in formats and country wordlists. The
-executable is a static Linux binary; Ruby is only needed to run the parity tests.
+It supports the original command-line options, 24 built-in formats, custom
+formats, name substitutions and username format recognition.
 
 ## Build
 
-Install Rust stable and the musl target, then build:
+With Rust stable installed:
 
 ```sh
 rustup target add x86_64-unknown-linux-musl
 make
 ```
 
-This creates `dist/username-anarchy` and copies the wordlists into `dist/names/`.
-Keep them together when moving the program. For a binary without the bundle,
-run `cargo build --release`; the output is
-`target/x86_64-unknown-linux-musl/release/username-anarchy-rs`.
+This builds a static x86-64 Linux executable at `dist/anarchy-rs` and copies the
+wordlists to `dist/names/`. Keep that directory beside the executable when
+installing or moving it. Release archives use the same layout.
 
-`make native` builds a separate version tuned for your CPU. The normal build
-stays portable across x86-64 machines.
+To build just the executable, run `cargo build --release`. It will be at
+`target/x86_64-unknown-linux-musl/release/anarchy-rs`.
 
-## Use
+## Usage
 
 ```sh
-./dist/username-anarchy Anna Key
-./dist/username-anarchy Anna Boom Key -f first.last,fmlast
-./dist/username-anarchy -i people.csv
-./dist/username-anarchy -F '%i.f%l' -@ @example.com Anna Key
-./dist/username-anarchy -a -c france
-./dist/username-anarchy -l
-./dist/username-anarchy -r j.smith
+./dist/anarchy-rs Anna Key
+./dist/anarchy-rs Anna Boom Key -f first.last,fmlast
+./dist/anarchy-rs -i people.csv
+./dist/anarchy-rs -F '%i.f%l' -@ @example.com Anna Key
+./dist/anarchy-rs -a -c france
+./dist/anarchy-rs -l
+./dist/anarchy-rs -r j.smith
 ```
 
-Input files can use spaces, commas or tabs. Headers tell the parser which name
-parts are available:
+Input files can use spaces, commas or tabs. A header identifies the name parts:
 
 ```csv
 firstname,middlename,lastname
@@ -46,43 +44,29 @@ Andrew,,Horton
 ```
 
 `firstinitial`, `middleinitial` and `lastinitial` are also accepted. Without a
-header, the original tool's first-name/last-name whitespace layout is used.
+header, use first and last names separated by whitespace.
 
-Output is lowercase and deduplicated across the whole run. Use `-C false` to
-keep format case. `-s on` enables substitutions for missing name parts and digit
-ranges; `-m N` limits results per person and format. `--help` lists the options.
+Output is lowercase with duplicates removed across the whole run. Use `-C false`
+to preserve format case. `-s on` enables substitutions for missing name parts
+and digit ranges; `-m N` limits results per person and format.
 
-Custom formats accept tokens such as `%f` (first name), `%l` (last name), `%i.f`
-(first initial) and `%F`/`%L` (capitalized names). You can also use the original
-ABK notation: `ABK` means first initial, middle initial, last initial. Run `-l`
-to see examples of the built-in formats.
+Custom formats accept `%f` (first name), `%l` (last name), `%i.f` (first initial)
+and `%F`/`%L` (capitalized names), among other tokens. The original ABK notation
+is also supported: `ABK` means first initial, middle initial and last initial.
+Use `-l` for built-in format examples and `--help` for all options.
 
-The program finds wordlists through `USERNAME_ANARCHY_ROOT`, beside the
-executable, or in the working directory. In a source checkout it also uses
-`vendor/username-anarchy/names/` directly. `--given-names` and `--family-names` accept
-your own dictionary files.
+## Wordlists
 
-## Performance
+The program looks for `names/` beside the executable, then in the working
+directory. Set `USERNAME_ANARCHY_ROOT` to a directory containing `names/` to
+use another location. `--given-names` and `--family-names` accept custom files.
 
-Files are read once, normalized in place where possible, and parsed into
-borrowed byte slices. Workers generate numbered batches; one merger applies
-global deduplication in input order. Hash tags travel with the candidates, so
-the merger does not hash their bytes again.
+## Development
 
-`USERNAME_ANARCHY_THREADS` sets the worker count. Set it to `1` to force serial
-execution. Performance depends on the input and available CPUs; measurements
-and the benchmark command are in [PERFORMANCE.md](docs/PERFORMANCE.md).
+Run `make check` for formatting, linting, documentation and tests. `make test`
+runs the unit and CLI regression tests; these checks require Python 3.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the source layout and
+[compatibility notes](docs/COMPATIBILITY.md) for behavior inherited from the original.
 
-## Check changes
-
-```sh
-make check   # formatting, linting, documentation and tests
-make test    # compare against the Ruby original
-```
-
-The parity tests compare output sets, including substitutions, Unicode names,
-country dictionaries and error cases. Some original quirks affect those outputs;
-[COMPATIBILITY.md](docs/COMPATIBILITY.md) documents them. The Ruby source and datasets
-are kept in `vendor/username-anarchy/` for testing and distribution.
-
-MIT licensed. See [THIRD_PARTY.md](docs/THIRD_PARTY.md) for attribution.
+MIT licensed. Credits and wordlist sources are in
+[THIRD_PARTY.md](docs/THIRD_PARTY.md).

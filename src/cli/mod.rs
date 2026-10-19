@@ -146,7 +146,7 @@ pub(crate) fn run() -> i32 {
             // environment override still permits any requested worker count.
             available.min(est.div_ceil(100_000).max(2) as usize)
         });
-    // Tunable so the profiling/benchmark harness can force a serial run.
+    // Allow callers to select a worker count or force serial execution.
     let min_parallel: u64 = std::env::var("USERNAME_ANARCHY_MIN_PARALLEL")
         .ok()
         .and_then(|v| v.parse::<u64>().ok())

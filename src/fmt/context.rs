@@ -16,7 +16,7 @@ fn load_or_die(path: &str) -> WordList {
     match std::fs::read(path) {
         Ok(data) => load_given_list(&data),
         Err(e) => {
-            eprintln!("username-anarchy: cannot read file: {path}: {e}");
+            eprintln!("anarchy-rs: cannot read file: {path}: {e}");
             std::process::exit(1);
         }
     }

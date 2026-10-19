@@ -4,7 +4,7 @@ use crate::fmt::{Ctx, Plugin};
 use crate::names::{person_of, Name};
 use crate::output;
 
-const VERSION: &str = "0.6";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const BANNER: &str = "anarchy-rs\n\n";
 
@@ -49,7 +49,7 @@ Username format:
                            ABK format. See README.md for format details.
 
 Output:
- -@, --suffix BOOL         Suffix. e.g. @example.com
+ -@, --suffix TEXT         Suffix. e.g. @example.com
                            Default: None
  -C BOOL,                  Case insensitive usernames.
      --case-insensitive    Default: True (All lower case)

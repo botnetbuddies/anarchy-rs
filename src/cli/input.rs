@@ -19,11 +19,6 @@ pub(super) fn root_dir() -> PathBuf {
             return cwd;
         }
     }
-    if std::path::Path::new("vendor/username-anarchy/names").is_dir() {
-        if let Ok(cwd) = std::env::current_dir() {
-            return cwd.join("vendor/username-anarchy");
-        }
-    }
     std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
 }
 

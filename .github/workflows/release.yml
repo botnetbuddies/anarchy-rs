@@ -26,12 +26,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Build
-        run: cargo build --release --locked
+        run: make dist
 
       - name: Verify static linking
         run: |
           set -euo pipefail
-          BIN="target/$TARGET/release/username-anarchy-rs"
+          BIN=dist/anarchy-rs
           file "$BIN"
           if readelf -l "$BIN" | grep -q INTERP; then
             echo "::error::not static"; exit 1
@@ -42,13 +42,8 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
-          ARCHIVE="username-anarchy-${VERSION}-${TARGET}"
-          mkdir -p "$ARCHIVE"
-          strip --strip-all -o "$ARCHIVE/username-anarchy" \
-            "target/$TARGET/release/username-anarchy-rs"
-          cp -r vendor/username-anarchy/names "$ARCHIVE/names"
-          cp README.md LICENSE "$ARCHIVE/"
-          cp -r docs "$ARCHIVE/docs"
+          ARCHIVE="anarchy-rs-${VERSION}-${TARGET}"
+          cp -r dist "$ARCHIVE"
           tar --sort=name --owner=0 --group=0 --numeric-owner \
               -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
           sha256sum "$ARCHIVE.tar.gz" > SHA256SUMS

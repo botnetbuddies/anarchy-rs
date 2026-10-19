@@ -31,13 +31,8 @@ pub fn bytes_equal(a: &[u8], b: &[u8]) -> bool {
 
 /// Append `s` to `out`.
 ///
-/// ## Why this exists (profiler-justified `unsafe`)
-///
-/// The format engine appends millions of short byte slices (name fragments and
-/// format literals). `Vec::extend_from_slice` lowers to a call to `memcpy`, and
-/// `perf` attributed ~18% of a benchmark run to that symbol, almost all of it
-/// call overhead on slices of a handful of bytes. For slices up to 16 bytes this
-/// copies with constant-size, inlined `copy_nonoverlapping` calls instead.
+/// Copies name fragments and format literals up to 16 bytes with inlined,
+/// constant-size operations. Larger slices use `Vec::extend_from_slice`.
 ///
 /// ## Safety
 ///

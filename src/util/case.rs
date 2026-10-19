@@ -19,8 +19,7 @@ pub fn is_ascii(s: &[u8]) -> bool {
 
 /// Ruby `String#downcase`, appending into an existing buffer.
 ///
-/// Writing into the caller's buffer avoids one heap allocation per format
-/// segment, which the profiler showed to be a dominant cost.
+/// Writing into the caller's buffer avoids an allocation per format segment.
 pub fn downcase_into(s: &[u8], out: &mut Vec<u8>) {
     if is_ascii(s) {
         let start = out.len();

@@ -3,18 +3,11 @@
 /dist/
 *.zip
 
-# Generated benchmark inputs and raw results
-/bench/data/
-/bench/results.log
-
-# Python
+# Python test caches
 __pycache__/
 *.py[cod]
 
-# Raw benchmark results
-/bench/results.json
-
-# Release packaging output
-/username-anarchy-*.tar.gz
-/username-anarchy-*-x86_64-unknown-linux-musl/
+# Release archives
+/anarchy-rs-*.tar.gz
+/anarchy-rs-*-x86_64-unknown-linux-musl/
 /SHA256SUMS
