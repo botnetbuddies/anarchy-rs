@@ -1,0 +1,46 @@
+name: Bug report
+description: Something differs from the original Ruby tool, or the binary misbehaves.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Parity bugs are the priority. If the output differs from the original,
+        please include the exact command and (if possible) the Ruby output.
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Release tag or `git rev-parse HEAD`.
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected output (Ruby)
+      description: Output of `ruby username-anarchy/username-anarchy ...`. If Ruby 3.2+ crashes on substitution, prefix with `-r tests/parity/oracle_compat.rb`.
+      render: text
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output (Rust)
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, how the binary was built or installed.
+      placeholder: "Ubuntu 24.04 x86_64, release tarball"
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else

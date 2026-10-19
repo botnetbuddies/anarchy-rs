@@ -1,0 +1,15 @@
+# Build artifacts
+/target/
+/dist/
+
+# Generated benchmark inputs and raw results
+/bench/data/
+/bench/results.log
+/bench/.hf.json
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Raw benchmark JSON (the Markdown table is committed)
+/bench/results.json

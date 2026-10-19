@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  TARGET: x86_64-unknown-linux-musl
+
+jobs:
+  release:
+    name: Build & publish static release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (stable, musl target)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Verify static linking
+        run: |
+          set -euo pipefail
+          BIN="target/$TARGET/release/username-anarchy-rs"
+          file "$BIN"
+          if readelf -l "$BIN" | grep -q INTERP; then
+            echo "::error::not static"; exit 1
+          fi
+
+      - name: Package
+        id: package
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="username-anarchy-${VERSION}-${TARGET}"
+          mkdir -p "$ARCHIVE"
+          strip --strip-all -o "$ARCHIVE/username-anarchy" \
+            "target/$TARGET/release/username-anarchy-rs"
+          cp -r username-anarchy/names "$ARCHIVE/names"
+          cp README.md PERFORMANCE.md LICENSE THIRD_PARTY.md "$ARCHIVE/"
+          tar --sort=name --owner=0 --group=0 --numeric-owner \
+              -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
+          sha256sum "$ARCHIVE.tar.gz" > SHA256SUMS
+          echo "archive=$ARCHIVE.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.package.outputs.version }}
+          files: |
+            ${{ steps.package.outputs.archive }}
+            SHA256SUMS
+          generate_release_notes: true
+          fail_on_unmatched_files: true

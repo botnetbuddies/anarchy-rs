@@ -1,0 +1,27 @@
+[package]
+name = "username-anarchy"
+version = "0.6.0"
+edition = "2021"
+description = "High-performance Rust rewrite of urbanadventurer/username-anarchy"
+license = "MIT"
+
+[[bin]]
+name = "username-anarchy-rs"
+path = "src/main.rs"
+
+[dependencies]
+rustc-hash = "2"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+# Keep debug symbols so `perf`/flamegraph can attribute samples to Rust frames.
+debug = true
+
+[profile.bench]
+opt-level = 3
+lto = true
+codegen-units = 1
+debug = true

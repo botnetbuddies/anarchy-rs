@@ -1,0 +1,8 @@
+# Build a fully static Linux binary by default.
+#
+# The x86_64-unknown-linux-musl target is self-contained in modern rustc: it
+# links against rustc's bundled musl with `+crt-static`, so no external musl
+# toolchain (musl-gcc) is needed. Pointing `linker` at musl-gcc would instead
+# produce a dynamically-linked musl binary that needs /lib/ld-musl at runtime.
+[build]
+target = "x86_64-unknown-linux-musl"
