@@ -7,6 +7,13 @@ names or the included country wordlists.
 It supports the original command-line options, 24 built-in formats, custom
 formats, name substitutions and username format recognition.
 
+## Install
+
+Prebuilt archives for each release are attached to the
+[releases page](https://github.com/botnetbuddies/anarchy-rs/releases):
+Linux x86-64 (fully static), macOS arm64 and Intel, or Windows x86-64 (.zip).
+Extract the archive and keep the executable beside `names/`.
+
 ## Build
 
 With Rust stable installed:
