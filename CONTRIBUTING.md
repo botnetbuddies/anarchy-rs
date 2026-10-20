@@ -33,6 +33,8 @@ second command also exercises the parallel generation path.
 
 ## Releases
 
-A `v*` tag triggers `.github/workflows/release.yml`. It packages the static
-`anarchy-rs` executable with `names/`, the README, documentation and license.
+A `v*` tag triggers `.github/workflows/release.yml`. It builds the executable
+for Linux (static x86-64), macOS (arm64 and Intel) and Windows (x86-64),
+packages each one with `names/`, the README, documentation and license, and
+publishes them on a GitHub release with a shared `SHA256SUMS`.
 Keep wordlists external so users can replace them without rebuilding.

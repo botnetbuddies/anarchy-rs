@@ -5,33 +5,71 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
-  TARGET: x86_64-unknown-linux-musl
 
 jobs:
-  release:
-    name: Build & publish static release
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            bin: anarchy-rs
+            format: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bin: anarchy-rs
+            format: tar.gz
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            bin: anarchy-rs
+            format: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: anarchy-rs.exe
+            format: zip
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Rust (stable, musl target)
+      - name: Install Rust (stable, ${{ matrix.target }})
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-musl
+          targets: ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Test
+        run: cargo test --locked --target ${{ matrix.target }}
 
       - name: Build
-        run: make dist
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
-      - name: Verify static linking
+      - name: Strip (Linux)
+        if: runner.os == 'Linux'
+        run: strip --strip-all target/${{ matrix.target }}/release/anarchy-rs
+
+      # Stripping invalidates the ad-hoc signature on arm64, so re-sign.
+      - name: Strip and re-sign (macOS)
+        if: runner.os == 'macOS'
         run: |
           set -euo pipefail
-          BIN=dist/anarchy-rs
+          BIN=target/${{ matrix.target }}/release/anarchy-rs
+          strip "$BIN"
+          codesign --force --sign - "$BIN"
+
+      - name: Verify static linking
+        if: runner.os == 'Linux'
+        run: |
+          set -euo pipefail
+          BIN=target/${{ matrix.target }}/release/anarchy-rs
           file "$BIN"
           if readelf -l "$BIN" | grep -q INTERP; then
             echo "::error::not static"; exit 1
@@ -39,23 +77,74 @@ jobs:
 
       - name: Package
         id: package
+        shell: bash
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
-          ARCHIVE="anarchy-rs-${VERSION}-${TARGET}"
-          cp -r dist "$ARCHIVE"
-          tar --sort=name --owner=0 --group=0 --numeric-owner \
-              -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
-          sha256sum "$ARCHIVE.tar.gz" > SHA256SUMS
-          echo "archive=$ARCHIVE.tar.gz" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          ARCHIVE="anarchy-rs-${VERSION}-${{ matrix.target }}"
+          BIN="target/${{ matrix.target }}/release/${{ matrix.bin }}"
+          mkdir "$ARCHIVE"
+          cp "$BIN" "$ARCHIVE/"
+          cp -r names "$ARCHIVE/names"
+          cp -r docs "$ARCHIVE/docs"
+          cp README.md LICENSE "$ARCHIVE/"
+          if [ "${{ matrix.format }}" = "zip" ]; then
+            7z a -tzip "$ARCHIVE.zip" "$ARCHIVE" > /dev/null
+            echo "archive=$ARCHIVE.zip" >> "$GITHUB_OUTPUT"
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            tar --sort=name --owner=0 --group=0 --numeric-owner \
+                -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
+            echo "archive=$ARCHIVE.tar.gz" >> "$GITHUB_OUTPUT"
+          else
+            COPYFILE_DISABLE=1 tar -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
+            echo "archive=$ARCHIVE.tar.gz" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${{ steps.package.outputs.archive }}"
+          "./${{ matrix.bin }}" anna key | grep -qx anna
+          "./${{ matrix.bin }}" --country france -a | grep -qx michel
+          "./${{ matrix.bin }}" --list-formats | grep -q firstlast
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: anarchy-rs-${{ matrix.target }}
+          path: ${{ steps.package.outputs.archive }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download archives
+        uses: actions/download-artifact@v8
+        with:
+          pattern: anarchy-rs-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum anarchy-rs-* > SHA256SUMS
+          cat SHA256SUMS
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
         with:
-          name: v${{ steps.package.outputs.version }}
+          name: ${{ github.ref_name }}
           files: |
-            ${{ steps.package.outputs.archive }}
-            SHA256SUMS
+            release-assets/*
           generate_release_notes: true
           fail_on_unmatched_files: true
